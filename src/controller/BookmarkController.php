@@ -220,7 +220,7 @@ class BookmarkController extends Controller
         $highlightDetails['created'] = $now;
         $highlightDetails['updated'] = $now;
         $highlightDetails['is_secret'] = 1;
-        $highlightDetails['is_encrypted'] = 1;
+        $highlightDetails['is_encrypted'] = 0;
 
         if (!isset($params['highlight']) || !$params['highlight']) {
             throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST, lang\En::HIGHLIGHT_CANNOT_BE_NULL);

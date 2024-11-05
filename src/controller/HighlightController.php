@@ -231,7 +231,6 @@ class HighlightController extends Controller
 
                 if ($typesenseSearchResult['found']) {
                     $document = [
-                        'id' => (string)$highlightID,
                         'highlight' => $params['highlight'],
                         'is_deleted' => 0,
                         'user_id' => (int)$_SESSION['userInfos']['user_id'],
@@ -243,7 +242,7 @@ class HighlightController extends Controller
                         'is_secret' => (int)$params['is_secret'],
                         'blog_path' => $params['blogPath'] ?? '',
                     ];
-                    $typesenseClient->updateDocument($document);
+                    $typesenseClient->updateDocument((string)$highlightID, $document);
                 }
 
             }
@@ -416,10 +415,9 @@ class HighlightController extends Controller
 
         if ($typesenseSearchResult['found']) {
             $document = [
-                'id' => (string)$highlightID,
                 'is_deleted' => 1,
             ];
-            $typesenseClient->updateDocument($document);
+            $typesenseClient->updateDocument((string)$highlightID, $document);
         }
 
         $_SESSION['badgeCounts']['highlightsCount'] -= 1;

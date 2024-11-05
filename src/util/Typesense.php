@@ -63,12 +63,12 @@ class Typesense
         }
     }
 
-    public function updateDocument($document): array
+    public function updateDocument($documentId, $document): array
     {
         // Can be used to update or delete a document.
         // To delete a document, set the 'is_deleted' key to true.
         try {
-            return $this->typesenseClient->collections[$this->collectionName]->documents->upsert($document);
+            return $this->typesenseClient->collections[$this->collectionName]->documents[$documentId]->update($document);
         } catch (TypesenseClientError $e) {
             return ['error' => $e->getMessage()];
         }

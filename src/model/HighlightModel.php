@@ -15,6 +15,7 @@ class HighlightModel
     /** @var \PDO $dbConnection */
     private $dbConnection;
     private $tagModel;
+    private $bookModel;
     public const DELETED = 1;
     public const NOT_DELETED = 0;
 
@@ -22,6 +23,7 @@ class HighlightModel
     {
         $this->dbConnection = $container->get('db');
         $this->tagModel = new TagModel($container);
+        $this->bookModel = new BookModel($container);
     }
 
     public function getHighlights($limit = null)
@@ -153,6 +155,11 @@ class HighlightModel
 
         if ($tags) {
             $highlight['tags'] = $tags;
+        }
+
+        if ($highlight['book_id']) {
+            $book = $this->bookModel->getBookById($highlight['book_id']); // Can cause making too much query to database
+            $highlight['referenced_book'] = $book['author'] . ' - ' . $book['title'];
         }
 
         return $highlight;

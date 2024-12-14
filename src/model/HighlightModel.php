@@ -622,7 +622,7 @@ class HighlightModel
     public function getRandomHighlight()
     {
         $minAndMaxID = $_SESSION['highlights']['minMaxID'] ?? $this->getMinMaxIdOfHighlights();
-        $randomID = rand($minAndMaxID['minID'], $minAndMaxID['maxID']);
+        $randomID = random_int($minAndMaxID['minID'], $minAndMaxID['maxID']);
         $tags = $this->tagModel->getTagsBySourceId($randomID, Sources::HIGHLIGHT->value);
 
         foreach ($tags['tags'] as $tag) {

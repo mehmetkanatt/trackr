@@ -268,6 +268,10 @@ class HighlightModel
             unset($params['book_id']);
         }
 
+        if (!$params['title']) {
+            unset($params['title']);
+        }
+
         $sql = 'INSERT INTO highlights (title, highlight, author, source, page, link, blog_path, book_id, is_encrypted, is_secret, created, updated, user_id)
                 VALUES(:title, :highlight, :author, :source, :page, :link, :blog_path, :book_id, :is_encrypted, :is_secret, :created, :updated, :user_id)';
 

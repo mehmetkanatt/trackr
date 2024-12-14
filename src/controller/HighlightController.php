@@ -109,6 +109,14 @@ class HighlightController extends Controller
         $nextID = $this->highlightModel->getNextHighlight($highlightID);
         $previousID = $this->highlightModel->getPreviousHighlight($highlightID);
         //$this->highlightModel->updateUpdatedFieldByHighlightId($highlightID);
+        $books = $this->bookModel->getAuthorBookList();
+
+        foreach ($books as $key => $book) {
+            if ($book['id'] === $detail['book_id']) {
+                $books[$key]['selected'] = 'selected';
+                break;
+            }
+        }
 
         $data = [
             'pageTitle' => 'Highlight Details | trackr',
@@ -116,7 +124,8 @@ class HighlightController extends Controller
             'subHighlights' => $subHighlights,
             'activeHighlights' => 'active',
             'nextID' => $nextID,
-            'previousID' => $previousID
+            'previousID' => $previousID,
+            'books' => $books
         ];
 
         if (ValidatorUtil::isInteger($highlightID)) {
@@ -208,6 +217,11 @@ class HighlightController extends Controller
         }
 
         $params['updated'] = time();
+        $params['book_id'] = null;
+
+        if (isset($params['book']) && $params['book'] !== 'null') {
+            $params['book_id'] = $this->bookModel->getBookIdByUid($params['book']);
+        }
 
         $this->tagModel->deleteTagsBySourceId($highlightID, Sources::HIGHLIGHT->value);
         $this->tagModel->updateSourceTags($params['tags'], $highlightID, Sources::HIGHLIGHT->value);

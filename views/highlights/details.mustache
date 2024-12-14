@@ -75,8 +75,12 @@
 
                                     <div class="form-row">
                                         <div class="form-group col-md-6">
-                                            <input id="tags" placeholder="Tags" type="text" class="form-control"
-                                                   value="{{#tags}}{{imploded_comma}}{{/tags}}">
+                                            <select id="book" name="book[]" class="form-control select2-multi">
+                                                <option value="null">No book reference</option>
+                                                {{#books}}
+                                                    <option value="{{uid}}" {{selected}}>{{book}}</option>
+                                                {{/books}}
+                                            </select>
                                         </div>
                                         <div class="form-group col-md-6">
                                             <input id="title" placeholder="Title" type="text" class="form-control"
@@ -84,6 +88,10 @@
                                         </div>
                                     </div>
 
+                                    <div class="form-group">
+                                        <input id="tags" placeholder="Tags" type="text" class="form-control"
+                                               value="{{#tags}}{{imploded_comma}}{{/tags}}">
+                                    </div>
 
                                     <div class="form-group custom-control custom-checkbox">
                                         <input type="checkbox" class="custom-control-input" id="is_secret"
@@ -205,6 +213,12 @@
             uploadUrl: '/images'
         });
 
+        $('.select2-multi').select2({
+            placeholder: "Reference with books",
+            multiple: false,
+            theme: 'bootstrap4',
+        });
+
         var simplemdeComment = new SimpleMDE({
             element: $("#comment")[0],
             toolbar: ["bold", "italic", "strikethrough", "heading", "code", "quote", "unordered-list", "ordered-list", "clean-block", "link", "image", "table", "horizontal-rule", "preview"],
@@ -292,6 +306,7 @@
             var title = $('#title').val();
             var is_secret = $('#is_secret').is(":checked") ? 1 : 0;
             var is_encrypted = $('#is_encrypted').is(":checked") ? 'Yes' : 'No';
+            var book = $('#book').val();
             var data = "highlight=" + encodeURIComponent(highlight) +
                     "&author=" + encodeURIComponent(author) +
                     "&source=" + encodeURIComponent(source) +
@@ -302,7 +317,8 @@
                     "&title=" + encodeURIComponent(title) +
                     "&blogPath=" + encodeURIComponent(blogPath) +
                     "&is_secret=" + encodeURIComponent(is_secret) +
-                    "&is_encrypted=" + encodeURIComponent(is_encrypted);
+                    "&is_encrypted=" + encodeURIComponent(is_encrypted) +
+                    "&book=" + encodeURIComponent(book);
 
             var result = ajaxCall('PUT', "/highlights/" + highlightID, data)
 

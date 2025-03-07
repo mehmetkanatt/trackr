@@ -359,7 +359,7 @@ class BookModel
                     $total += $diff;
                 } else {
                     $this->insertNewReadRecord($pathId, $row['id']);
-                    $this->setBookPathStatus($pathId, $row['id'], BookStatus::DONE->value);
+                    $this->changePathBookStatus($pathId, $row['id'], BookStatus::DONE->value);
                 }
             }
 
@@ -511,16 +511,19 @@ class BookModel
         return $startDate;
     }
 
-    public function setBookPathStatus($pathId, $bookId, $status)
+    public function changePathBookStatus($pathId, $bookId, $status)
     {
+        $now = time();
+
         $sql = 'UPDATE path_books
-                SET status=:status
-                WHERE book_id=:book_id AND path_id = :path_id';
+                SET status = :status, updated = :updated
+                WHERE path_id = :path_id AND book_id = :book_id';
 
         $stm = $this->dbConnection->prepare($sql);
-        $stm->bindParam(':book_id', $bookId, \PDO::PARAM_INT);
         $stm->bindParam(':status', $status, \PDO::PARAM_INT);
         $stm->bindParam(':path_id', $pathId, \PDO::PARAM_INT);
+        $stm->bindParam(':book_id', $bookId, \PDO::PARAM_INT);
+        $stm->bindParam(':updated', $now, \PDO::PARAM_INT);
 
         if (!$stm->execute()) {
             throw CustomException::dbError(StatusCode::HTTP_SERVICE_UNAVAILABLE, json_encode($stm->errorInfo()));
@@ -921,7 +924,7 @@ class BookModel
 
             if ($pageCount != 0 && $diff <= 0) {
                 $this->insertNewReadRecord($row['path_id'], $row['id']);
-                $this->setBookPathStatus($row['path_id'], $row['id'], BookStatus::DONE->value);
+                $this->changePathBookStatus($row['path_id'], $row['id'], BookStatus::DONE->value);
 
                 if ($row['is_complete_book']) {
                     $_SESSION['badgeCounts']['finishedBookCount']++;
@@ -1364,27 +1367,6 @@ class BookModel
         $stm->bindParam(':finishedBookID', $finishedBookID, \PDO::PARAM_INT);
         $stm->bindParam(':rate', $rating, \PDO::PARAM_INT);
         $stm->bindParam(':user_id', $_SESSION['userInfos']['user_id'], \PDO::PARAM_INT);
-
-        if (!$stm->execute()) {
-            throw CustomException::dbError(StatusCode::HTTP_SERVICE_UNAVAILABLE, json_encode($stm->errorInfo()));
-        }
-
-        return true;
-    }
-
-    public function changePathBookStatus($pathId, $bookId, $status)
-    {
-        $now = time();
-
-        $sql = 'UPDATE path_books
-                SET status = :status, updated = :updated
-                WHERE path_id = :path_id AND book_id = :book_id';
-
-        $stm = $this->dbConnection->prepare($sql);
-        $stm->bindParam(':status', $status, \PDO::PARAM_INT);
-        $stm->bindParam(':path_id', $pathId, \PDO::PARAM_INT);
-        $stm->bindParam(':book_id', $bookId, \PDO::PARAM_INT);
-        $stm->bindParam(':updated', $now, \PDO::PARAM_INT);
 
         if (!$stm->execute()) {
             throw CustomException::dbError(StatusCode::HTTP_SERVICE_UNAVAILABLE, json_encode($stm->errorInfo()));

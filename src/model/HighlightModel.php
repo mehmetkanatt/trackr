@@ -52,6 +52,32 @@ class HighlightModel
         return $list;
     }
 
+    public function getFavorites($limit = null)
+    {
+        $limit = $limit ?? 500;
+        $list = [];
+
+        $sql = 'SELECT h.id, h.highlight, h.author, h.source, h.created, h.updated, h.is_encrypted, h.is_secret, h.blog_path, h.book_id, f.id AS favorite_id
+                FROM highlights h
+                INNER JOIN favorites f ON h.id = f.source_id AND f.type = 1
+                WHERE h.is_deleted = 0 AND h.user_id = :user_id AND h.type=0
+                ORDER BY h.updated DESC LIMIT :limit';
+
+        $stm = $this->dbConnection->prepare($sql);
+        $stm->bindParam(':limit', $limit, \PDO::PARAM_INT);
+        $stm->bindParam(':user_id', $_SESSION['userInfos']['user_id'], \PDO::PARAM_INT);
+
+        if (!$stm->execute()) {
+            throw CustomException::dbError(StatusCode::HTTP_SERVICE_UNAVAILABLE, json_encode($stm->errorInfo()));
+        }
+
+        while ($row = $stm->fetch(\PDO::FETCH_ASSOC)) {
+            $list[] = $this->processHighlightRecord($row);
+        }
+
+        return $list;
+    }
+
     public function getHighlightsByGivenField($field, $param, $limit = null)
     {
         $limit = $limit ?: 500;

@@ -79,7 +79,7 @@ class HighlightController extends Controller
             } elseif ($type === 'private') {
                 $highlights = $this->highlightModel->getHighlightsByGivenField('is_secret', 1);
             } elseif ($type === 'favorites') {
-                $show = 1;
+                $highlights = $this->highlightModel->getFavorites();
             }
 
         } elseif (isset($queryString['search'])) {

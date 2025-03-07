@@ -441,6 +441,28 @@ class HighlightModel
         return $count;
     }
 
+    public function getFavoritesCount()
+    {
+        $count = 0;
+
+        $sql = 'SELECT COUNT(*) AS count
+                FROM highlights h
+                INNER JOIN favorites f ON h.id = f.source_id AND f.type = 1
+                WHERE h.is_deleted = 0 AND h.user_id = :user_id AND h.type=0';
+
+        $stm = $this->dbConnection->prepare($sql);
+        $stm->bindParam(':user_id', $_SESSION['userInfos']['user_id'], \PDO::PARAM_INT);
+
+        if (!$stm->execute()) {
+            throw CustomException::dbError(StatusCode::HTTP_SERVICE_UNAVAILABLE, json_encode($stm->errorInfo()));
+        }
+
+        while ($row = $stm->fetch(\PDO::FETCH_ASSOC)) {
+            $count = $row['count'];
+        }
+
+        return $count;
+    }
     public function getNextHighlight($id)
     {
         $next = $id;

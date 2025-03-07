@@ -53,6 +53,9 @@ class HomeController extends Controller
             $_SESSION['badgeCounts']['finishedBookCount'] = $this->bookModel->getFinishedBookCount();
             $_SESSION['badgeCounts']['bookmarkCount'] = $this->bookmarkModel->getUncompleteBookmarks();
             $_SESSION['badgeCounts']['highlightsCount'] = $this->highlightModel->getHighlightsCount();
+            $_SESSION['badgeCounts']['publicHighlightsCount'] = $this->highlightModel->getHighlightsCount('is_secret', 0);
+            $_SESSION['badgeCounts']['privateHighlightsCount'] = $this->highlightModel->getHighlightsCount('is_secret', 1);
+            $_SESSION['badgeCounts']['favoriteHighlightsCount'] = $this->highlightModel->getFavoritesCount();
             $_SESSION['badgeCounts']['expires_at'] = time() + 3600;
         }
 
@@ -62,6 +65,9 @@ class HomeController extends Controller
             'finishedBookCount' => $_SESSION['badgeCounts']['finishedBookCount'],
             'bookmarkCount' => $_SESSION['badgeCounts']['bookmarkCount'],
             'highlightsCount' => $_SESSION['badgeCounts']['highlightsCount'],
+            'publicHighlightsCount' => $_SESSION['badgeCounts']['publicHighlightsCount'],
+            'privateHighlightsCount' => $_SESSION['badgeCounts']['privateHighlightsCount'],
+            'favoriteHighlightsCount' => $_SESSION['badgeCounts']['favoriteHighlightsCount']
         ];
 
         return $this->response(StatusCode::HTTP_OK, $data);

@@ -21,7 +21,6 @@
             </li>
 
             <li class="nav-item dropdown {{activeBooks}}">
-                <!--                <a href="/highlights" class="nav-link">-->
                 <a href="#menu-books-ddl" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle nav-link">
                     <i class="fe fe-book fe-16"></i>
                     <span class="ml-3 item-text">Books</span>
@@ -59,7 +58,6 @@
             </li>
 
             <li class="nav-item dropdown {{activeBookmarks}}">
-                <!--                <a href="/highlights" class="nav-link">-->
                 <a href="#menu-bookmarks-ddl" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle nav-link">
                     <i class="fe fe-bookmark fe-16"></i>
                     <span class="ml-3 item-text">Bookmarks</span>
@@ -92,15 +90,21 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link pl-3" href="/highlights?type=favorites"><span class="ml-1 item-text">Favorites</span>
+                        <a class="nav-link pl-3" href="/highlights?type=favorites">
+                            <span class="ml-1 item-text">Favorites</span>
+                            <span id="favoriteHighlightsCount" class="badge badge-pill badge-warning"></span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link pl-3" href="/highlights?type=public"><span class="ml-1 item-text">Public</span>
+                        <a class="nav-link pl-3" href="/highlights?type=public">
+                            <span class="ml-1 item-text">Public</span>
+                            <span id="publicHighlightsBadgeCount" class="badge badge-pill badge-warning"></span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link pl-3" href="/highlights?type=private"><span class="ml-1 item-text">Private</span>
+                        <a class="nav-link pl-3" href="/highlights?type=private">
+                            <span class="ml-1 item-text">Private</span>
+                            <span id="privateHighlightsBadgeCount" class="badge badge-pill badge-warning"></span>
                         </a>
                     </li>
                 </ul>
@@ -145,7 +149,6 @@
             </a>
         </div>
 
-
     </nav>
 
 </aside>
@@ -160,6 +163,9 @@
         $('#todosBadgeCount').text(resultBadgeCounts.todosCount);
         $('#videosBadgeCount').text(resultBadgeCounts.videosCount);
         $('#highlightsBadgeCount').text(resultBadgeCounts.highlightsCount);
+        $('#publicHighlightsBadgeCount').text(resultBadgeCounts.publicHighlightsCount);
+        $('#privateHighlightsBadgeCount').text(resultBadgeCounts.privateHighlightsCount);
+        $('#favoriteHighlightsCount').text(resultBadgeCounts.favoriteHighlightsCount);
 
         var resultFavorites = ajaxCall('GET', "/favorites?type=highlight", null, false, false);
         var template = $('#highlight-favorites-template').html();

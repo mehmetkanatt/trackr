@@ -72,9 +72,16 @@ class HighlightController extends Controller
             $bookName = $book['author'] . ' - ' . $book['title'];
             $highlights = $this->highlightModel->getHighlightsByGivenField('book_id', $bookId);
             $data['pageTitle'] = "$bookName's Highlights | trackr";
-        } elseif (isset($queryString['is_secret'])) {
-            $isSecret = $queryString['is_secret'] === 'true' ? 1 : 0;
-            $highlights = $this->highlightModel->getHighlightsByGivenField('is_secret', $isSecret);
+        } elseif (isset($queryString['type'])) {
+            $type = $queryString['type'];
+            if ($type === 'public') {
+                $highlights = $this->highlightModel->getHighlightsByGivenField('is_secret', 0);
+            } elseif ($type === 'private') {
+                $highlights = $this->highlightModel->getHighlightsByGivenField('is_secret', 1);
+            } elseif ($type === 'favorites') {
+                $show = 1;
+            }
+
         } elseif (isset($queryString['search'])) {
             $searchParam = trim($queryString['search']);
 

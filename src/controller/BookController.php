@@ -104,7 +104,8 @@ class BookController extends Controller
         $data = [
             'pageTitle' => 'Finished Books | trackr',
             'books' => $books,
-            'activeFinished' => 'active'
+            'activeFinished' => 'active',
+            'finishedBooksCount' => count($books)
         ];
 
         return $this->view->render($response, 'books/finished.mustache', $data);

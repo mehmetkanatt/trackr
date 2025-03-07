@@ -32,7 +32,7 @@ class FavoriteController extends Controller
     {
         $params = $request->getParsedBody();
 
-        if (isset($params['type']) && $params['type'] && isset($params['id']) && $params['id']) {
+        if (isset($params['type'], $params['id']) && $params['type'] && $params['id']) {
 
             if ($params['type'] === 'highlight') {
                 $type = Sources::HIGHLIGHT->value;
@@ -47,7 +47,36 @@ class FavoriteController extends Controller
             }
 
             $this->favoriteModel->add($type, $params['id']);
-            $resource['message'] = "Success";
+            $resource['message'] = "Successfully added";
+            $resource['responseCode'] = StatusCode::HTTP_OK;
+        } else {
+            $resource['message'] = "Required fields cannot be null";
+            $resource['responseCode'] = StatusCode::HTTP_BAD_REQUEST;
+        }
+
+        return $this->response($resource['responseCode'], $resource);
+    }
+
+    public function remove(ServerRequestInterface $request, ResponseInterface $response)
+    {
+        $params = $request->getParsedBody();
+
+        if (isset($params['type'], $params['id']) && $params['type'] && $params['id']) {
+
+            if ($params['type'] === 'highlight') {
+                $type = Sources::HIGHLIGHT->value;
+            } elseif ($params['type'] === 'bookmark') {
+                $type = Sources::BOOKMARK->value;
+            } elseif ($params['type'] === 'book') {
+                $type = Sources::BOOK->value;
+            } else {
+                $resource['message'] = 'Unknown type';
+                $resource['responseCode'] = StatusCode::HTTP_BAD_REQUEST;
+                return $this->response($resource['responseCode'], $resource);
+            }
+
+            $this->favoriteModel->remove($type, $params['id']);
+            $resource['message'] = "Successfully removed";
             $resource['responseCode'] = StatusCode::HTTP_OK;
         } else {
             $resource['message'] = "Required fields cannot be null";

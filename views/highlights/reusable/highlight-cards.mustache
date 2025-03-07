@@ -1,6 +1,9 @@
 {{#highlights}}
     <div class="card highlightCard">
         <div class="card-header">
+
+            <span class="circle circle-sm {{favorite_bg}} changeFavoriteStatus" data-id="{{id}}" data-toggle="tooltip" data-placement="top" title="{{favorite_tooltip_text}}"><i class="fe fe-8 fe-heart text-white mb-0"></i></span>
+
             {{#version_count}}
                 <a role="button" href="#" data-id="{{id}}" class="badge badge-warning float-right btnHighlightVersions"
                    data-toggle="modal" data-target="#highlightVersionsModal"><span class="fe fe-activity fe-8"></span> {{version_count}}</a>
@@ -13,14 +16,12 @@
 
             <a role="button" href="/highlights/{{id}}/details" class="badge badge-primary float-right"><span
                     class="fe fe-edit fe-8"></span></a>
-            <a role="button" class="badge float-right addToFavorite" data-id="{{id}}" data-toggle="tooltip" data-placement="top" title="Click to add to favorite"><span
-                    class="fe fe-heart fe-8"></span></a>
-
             {{#blog_path}}
                 <strong># {{blog_path}}</strong>
             {{/blog_path}}
 
             {{#is_secret}}<i class="fe fe-lock fe-12" data-toggle="tooltip" data-placement="top" title="Secret Highlight"></i>{{/is_secret}}
+
         </div>
 
         <div class="card-body">

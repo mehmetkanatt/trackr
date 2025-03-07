@@ -230,12 +230,28 @@
             }
         });
 
-        $(".addToFavorite").on('click', function (e) {
+        $(".changeFavoriteStatus").on('click', function (e) {
             var type = 'highlight'
             var id = $(this).data("id")
+            var status = $(this).hasClass('bg-danger') ? 'remove' : 'add'
             var data = "id=" + encodeURIComponent(id) +
                     "&type=" + encodeURIComponent(type)
-            ajaxCall('POST', "/favorites", data)
+
+            if (status === 'add') {
+                var result = ajaxCall('POST', "/favorites", data)
+                if (result !== false) {
+                    $(this).attr('title', 'Click to remove from favorite');
+                    $(this).toggleClass('bg-danger');
+                }
+            } else {
+                var result = ajaxCall('DELETE', "/favorites", data)
+                if (result !== false) {
+                    $(this).attr('title', 'Click to add favorite');
+                    $(this).toggleClass('bg-danger');
+                }
+            }
+
+
         });
 
         simplemde.codemirror.on("change", function () {

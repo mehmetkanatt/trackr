@@ -84,6 +84,7 @@ $app->group('', function () {
 
     $this->get('/favorites', FavoriteController::class . ':get');
     $this->post('/favorites', FavoriteController::class . ':add');
+    $this->delete('/favorites', FavoriteController::class . ':remove');
 
     $this->get('/chains', ChainController::class . ':index');
     $this->post('/chains', ChainController::class . ':start');

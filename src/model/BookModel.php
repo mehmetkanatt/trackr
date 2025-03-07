@@ -333,7 +333,7 @@ class BookModel
         $sql = 'SELECT b.id, b.page_count, b.ebook_version, b.ebook_page_count, (SELECT sum(amount) FROM book_trackings WHERE book_id=pb.book_id AND path_id=:path_id AND user_id = :user_id) AS readAmount
                 FROM books b
                 INNER JOIN path_books pb ON b.id = pb.book_id
-                WHERE pb.path_id = :path_id AND (pb.status < 2 OR pb.status = 4)';
+                WHERE pb.path_id = :path_id AND (pb.status IN (0,1,4))';
 
         $stm = $this->dbConnection->prepare($sql);
         $stm->bindParam(':path_id', $pathId, \PDO::PARAM_INT);
@@ -1327,7 +1327,7 @@ class BookModel
         $bookCount = 0;
 
         if ($status == 'active') {
-            $status = '(pb.status < 2 OR pb.status = 4)';
+            $status = 'pb.status IN (0, 1, 4)';
         } elseif ($status == 'done') {
             $status = 'pb.status = 2';
         } elseif ($status == 'abandoned') {

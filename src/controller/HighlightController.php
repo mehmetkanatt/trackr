@@ -39,7 +39,8 @@ class HighlightController extends Controller
 
         $data = [
             'pageTitle' => 'Highlights | trackr',
-            'activeHighlights' => 'active'
+            'activeHighlights' => 'active',
+            'showHighlightsDropdownList' => 'show',
         ];
 
         if (isset($queryString['tag'])) {

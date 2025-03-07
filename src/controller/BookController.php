@@ -44,7 +44,8 @@ class BookController extends Controller
         $data = [
             'pageTitle' => $path['name'] . "'s Books | trackr",
             'books' => $books,
-            'activeBookPaths' => 'active'
+            'activeBooks' => 'active',
+            'showBooksDropdownList' => 'show',
         ];
 
         return $this->view->render($response, 'books/index.mustache', $data);
@@ -57,7 +58,8 @@ class BookController extends Controller
         $data = [
             'pageTitle' => 'Paths | trackr',
             'bookPaths' => $paths,
-            'activeBookPaths' => 'active',
+            'activeBooks' => 'active',
+            'showBooksDropdownList' => 'show',
         ];
 
         return $this->view->render($response, 'books/paths.mustache', $data);
@@ -76,7 +78,8 @@ class BookController extends Controller
             'books' => $books,
             'publishers' => $publishers,
             'paths' => $paths,
-            'activeAllBooks' => 'active'
+            'activeBooks' => 'active',
+            'showBooksDropdownList' => 'show',
         ];
 
         return $this->view->render($response, 'books/all.mustache', $data);
@@ -91,7 +94,8 @@ class BookController extends Controller
             'pageTitle' => 'My Books | trackr',
             'books' => $books,
             'paths' => $paths,
-            'activeMyBooks' => 'active'
+            'activeBooks' => 'active',
+            'showBooksDropdownList' => 'show',
         ];
 
         return $this->view->render($response, 'books/my.mustache', $data);
@@ -104,8 +108,9 @@ class BookController extends Controller
         $data = [
             'pageTitle' => 'Finished Books | trackr',
             'books' => $books,
-            'activeFinished' => 'active',
-            'finishedBooksCount' => count($books)
+            'activeBooks' => 'active',
+            'finishedBooksCount' => count($books),
+            'showBooksDropdownList' => 'show',
         ];
 
         return $this->view->render($response, 'books/finished.mustache', $data);
@@ -127,7 +132,7 @@ class BookController extends Controller
         $data = [
             'pageTitle' => "$bookName's Highlights | trackr",
             'highlights' => $highlights,
-            'activeAllBooks' => 'active',
+            'activeBooks' => 'active',
             'bookUID' => $bookUid,
             'tags' => $tags['imploded_comma']
         ];
@@ -142,7 +147,7 @@ class BookController extends Controller
         $data = [
             'pageTitle' => 'Reading History | trackr',
             'readingHistory' => $readingHistory,
-            'activeReadingHistory' => 'active'
+            'activeBooks' => 'active'
         ];
 
         return $this->view->render($response, 'books/reading-history.mustache', $data);

@@ -106,9 +106,9 @@ class LogController extends Controller
                     $link = $this->chainModel->getLinkByChainIdAndDate($chain['chainId'], $log['date']);
 
                     if ($link) {
-                        $additionalData .= "{$link['linkValueShowInLogsValue']} {$chain['chainName']}";
+                        $additionalData .= "{$link['linkValueShowInLogsValue']} {$chain['chainName']}\n";
                     } else {
-                        $additionalData .= "- [ ] {$chain['chainName']}";
+                        $additionalData .= "- [ ] {$chain['chainName']}\n";
                     }
                 }
             }

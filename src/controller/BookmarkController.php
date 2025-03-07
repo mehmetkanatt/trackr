@@ -104,10 +104,10 @@ class BookmarkController extends Controller
             throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST, 'Bookmark cannot be empty!');
         }
 
-        $bookmarkExist = $this->bookmarkModel->getParentBookmarkByBookmark($params['bookmark']);
+        $bookmarkExist = $this->bookmarkModel->getParentBookmarkByBookmark(trim($params['bookmark']));
 
         if (!$bookmarkExist) {
-            $bookmarkID = $this->bookmarkModel->create($params['bookmark']);
+            $bookmarkID = $this->bookmarkModel->create(trim($params['bookmark']));
             $bookmarkCreatedBefore = false;
         } else {
             $bookmarkID = $bookmarkExist['id'];

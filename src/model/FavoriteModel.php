@@ -37,6 +37,22 @@ class FavoriteModel
         return true;
     }
 
+    public function remove($type, $sourceId)
+    {
+        $sql = 'DELETE FROM favorites WHERE type = :type AND source_id = :source_id AND user_id = :user_id';
+
+        $stm = $this->dbConnection->prepare($sql);
+        $stm->bindParam(':type', $type, \PDO::PARAM_INT);
+        $stm->bindParam(':source_id', $sourceId, \PDO::PARAM_INT);
+        $stm->bindParam(':user_id', $_SESSION['userInfos']['user_id'], \PDO::PARAM_INT);
+
+        if (!$stm->execute()) {
+            throw CustomException::dbError(StatusCode::HTTP_SERVICE_UNAVAILABLE, json_encode($stm->errorInfo()));
+        }
+
+        return true;
+    }
+
     public function getHighlightFavorites()
     {
         $type = Sources::HIGHLIGHT->value;

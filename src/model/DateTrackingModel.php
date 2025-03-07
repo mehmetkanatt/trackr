@@ -76,8 +76,9 @@ class DateTrackingModel
                     continue;
                 }
 
+                $row['startedAt']  = date($dateFormat, $row['created']);
                 $row['diffInfo'] = 'Left';
-                $row['dateInfo'] = 'Will be finished at';
+                $row['dateInfo'] = "Started at {$row['startedAt']} and will be finished at";
             } else {
                 $row['diffInfo'] = 'Passed';
                 $row['dateInfo'] = 'Started at';

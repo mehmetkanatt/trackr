@@ -385,6 +385,7 @@ class HighlightController extends Controller
         $params['updated'] = $now;
         $params['created'] = $now;
         $params['blog_path'] = $parentHighlightDetails['blog_path'];
+        $params['is_secret'] = 1;
 
         $subHighlightID = $this->highlightModel->create($params);
 

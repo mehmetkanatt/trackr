@@ -2,7 +2,7 @@ services:
 
   trackr-db:
     container_name: trackr-db
-    image: mysql:5.7
+    image: mysql:8.0
     restart: always
     volumes:
       - db-data:/var/lib/mysql

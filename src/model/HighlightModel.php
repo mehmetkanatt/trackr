@@ -31,8 +31,9 @@ class HighlightModel
         $limit = $limit ?? 500;
         $list = [];
 
-        $sql = 'SELECT h.id, h.highlight, h.author, h.source, h.created, h.updated, h.is_encrypted, h.is_secret, h.blog_path, h.book_id
+        $sql = 'SELECT h.id, h.highlight, h.author, h.source, h.created, h.updated, h.is_encrypted, h.is_secret, h.blog_path, h.book_id, f.id AS favorite_id
                 FROM highlights h
+                LEFT JOIN favorites f ON h.id = f.source_id AND f.type = 1
                 WHERE h.is_deleted = 0 AND h.user_id = :user_id AND h.type=0
                 ORDER BY h.updated DESC LIMIT :limit';
 
@@ -56,9 +57,10 @@ class HighlightModel
         $limit = $limit ?: 500;
         $list = [];
 
-        $sql = "SELECT h.id, h.highlight, h.author, h.source, h.created, h.updated, h.is_encrypted, h.is_secret, h.blog_path, h.book_id
+        $sql = "SELECT h.id, h.highlight, h.author, h.source, h.created, h.updated, h.is_encrypted, h.is_secret, h.blog_path, h.book_id, f.id AS favorite_id
                 FROM highlights h
-                WHERE h.is_deleted = 0 AND h.user_id = :user_id AND $field = :param AND h.is_deleted = 0
+                LEFT JOIN favorites f ON h.id = f.source_id AND f.type = 1
+                WHERE h.is_deleted = 0 AND h.user_id = :user_id AND h.$field = :param AND h.is_deleted = 0
                 ORDER BY h.updated DESC LIMIT :limit";
 
         $stm = $this->dbConnection->prepare($sql);
@@ -82,9 +84,10 @@ class HighlightModel
         $limit = $limit ? $limit : 500;
         $list = [];
 
-        $sql = 'SELECT h.id, h.highlight, h.author, h.source, h.created, h.updated, h.is_encrypted, h.is_secret, h.blog_path, h.book_id
+        $sql = 'SELECT h.id, h.highlight, h.author, h.source, h.created, h.updated, h.is_encrypted, h.is_secret, h.blog_path, h.book_id, f.id AS favorite_id
                 FROM highlights h LEFT JOIN tag_relationships tr ON h.id = tr.source_id
                 LEFT JOIN tags t ON tr.tag_id = t.id
+                LEFT JOIN favorites f ON h.id = f.source_id AND f.type = 1
                 WHERE h.is_deleted = 0 AND h.user_id = :user_id AND t.tag = :tag AND tr.type = 1
                 ORDER BY h.updated DESC LIMIT :limit';
 
@@ -160,6 +163,14 @@ class HighlightModel
         if ($highlight['book_id']) {
             $book = $this->bookModel->getBookById($highlight['book_id']); // Can cause making too much query to database
             $highlight['referenced_book'] = $book['author'] . ' - ' . $book['title'];
+        }
+
+        if ($highlight['favorite_id']) {
+            $highlight['favorite_bg'] = 'bg-danger';
+            $highlight['favorite_tooltip_text'] = 'Click to remove from favorite';
+        } else {
+            $highlight['favorite_bg'] = '';
+            $highlight['favorite_tooltip_text'] = 'Click to add favorite';
         }
 
         return $highlight;
@@ -502,8 +513,9 @@ class HighlightModel
         $searchParam = "%$searchParam%";
         $list = [];
 
-        $sql = 'SELECT h.id, h.highlight, h.author, h.source, h.created, h.updated, h.is_encrypted, h.is_secret, h.blog_path, h.book_id
+        $sql = 'SELECT h.id, h.highlight, h.author, h.source, h.created, h.updated, h.is_encrypted, h.is_secret, h.blog_path, h.book_id, f.id AS favorite_id
                 FROM highlights h
+                LEFT JOIN favorites f ON h.id = f.source_id AND f.type = 1
                 WHERE h.is_deleted = 0 AND h.is_encrypted = 0 AND h.highlight LIKE :searchParam AND h.user_id = :user_id';
 
         $stm = $this->dbConnection->prepare($sql);
@@ -526,8 +538,9 @@ class HighlightModel
         $list = [];
         $searchParam = '"' . $searchParam . '"';
 
-        $sql = "SELECT h.id, h.highlight, h.author, h.source, h.created, h.updated, h.is_encrypted, h.is_secret, h.blog_path, h.book_id
+        $sql = "SELECT h.id, h.highlight, h.author, h.source, h.created, h.updated, h.is_encrypted, h.is_secret, h.blog_path, h.book_id, f.id AS favorite_id
                 FROM highlights h
+                LEFT JOIN favorites f ON h.id = f.source_id AND f.type = 1
                 WHERE h.is_deleted = 0
                   AND h.is_encrypted = 0
                   AND h.user_id = :user_id

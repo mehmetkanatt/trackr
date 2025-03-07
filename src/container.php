@@ -79,19 +79,19 @@ $container['errorHandler'] = function ($container) {
         /** @var Monolog\Logger $logger */
         $logger = $container->get('logger');
 
+        $errorMessage = $exception->getMessage() . ' file:' . $exception->getFile() . ' :' . $exception->getLine();
+
         if ($exception instanceof CustomException) {
 
-            $errorMessage = $exception->getMessage() . " detail:" . $exception->getErrorDetail() . ' trace:' . $exception->getBackTrace();
-
-            if ($exception->getErrorType() == 'client_error') {
+            if ($exception->getErrorType() === 'client_error') {
                 $logger->warning($errorMessage);
             }
 
-            if ($exception->getErrorType() == 'server_error') {
+            if ($exception->getErrorType() === 'server_error') {
                 $logger->error($errorMessage);
             }
 
-            if ($exception->getErrorType() == 'db_error') {
+            if ($exception->getErrorType() === 'db_error') {
                 $logger->critical($errorMessage);
             }
 
@@ -111,11 +111,11 @@ $container['errorHandler'] = function ($container) {
                 $data['status'] = StatusCode::HTTP_CONFLICT;
                 $data['message'] = 'Duplicate entry!';
             } else {
-                $logger->critical('PDOException: ' . $exception->getMessage());
+                $logger->critical('PDOException: ' . $errorMessage);
             }
 
         } else {
-            $logger->critical($exception->getMessage());
+            $logger->critical($errorMessage);
 
             $data = [
                 'status' => StatusCode::HTTP_INTERNAL_SERVER_ERROR,

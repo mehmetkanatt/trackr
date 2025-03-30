@@ -201,7 +201,7 @@ class HighlightController extends Controller
     public function update(ServerRequestInterface $request, ResponseInterface $response, $args)
     {
         $highlightID = $args['id'];
-        $params = ArrayUtil::trimArrayElements($request->getParsedBody());
+        $params = ArrayUtil::trimArrayElements((array)$request->getParsedBody());
         $highlightDetails = $this->highlightModel->getHighlightByID($highlightID);
         $doIndex = false;
 
@@ -280,7 +280,7 @@ class HighlightController extends Controller
 
     public function create(ServerRequestInterface $request, ResponseInterface $response)
     {
-        $params = ArrayUtil::trimArrayElements($request->getParsedBody());
+        $params = ArrayUtil::trimArrayElements((array)$request->getParsedBody());
         $doIndex = false;
         $now = time();
 
@@ -356,7 +356,7 @@ class HighlightController extends Controller
     public function createSub(ServerRequestInterface $request, ResponseInterface $response, $args)
     {
         $resource = [];
-        $params = ArrayUtil::trimArrayElements($request->getParsedBody());
+        $params = ArrayUtil::trimArrayElements((array)$request->getParsedBody());
         $highlightID = $args['id'];
         $doIndex = false;
         $now = time();

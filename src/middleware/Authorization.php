@@ -13,7 +13,7 @@ class Authorization extends Middleware
     public function __invoke(ServerRequestInterface $request, ResponseInterface $response, $next)
     {
         $authModel = new AuthModel($this->container);
-        $apiToken = $request->getHeader('X-Trackr-Token');
+        $apiToken = $request->getHeader('X-Trackr-Token')[0];
 
         if (!$apiToken) {
             throw CustomException::clientError(StatusCode::HTTP_UNAUTHORIZED, 'Authorization header required!');

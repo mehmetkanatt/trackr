@@ -133,7 +133,8 @@ class HighlightController extends Controller
             'activeHighlights' => 'active',
             'nextID' => $nextID,
             'previousID' => $previousID,
-            'books' => $books
+            'books' => $books,
+            'showHighlightsDropdownList' => 'show',
         ];
 
         if (ValidatorUtil::isInteger($highlightID)) {

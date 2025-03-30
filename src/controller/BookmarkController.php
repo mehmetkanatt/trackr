@@ -271,7 +271,9 @@ class BookmarkController extends Controller
         ];
         $typesenseClient->indexDocument($document);
 
-        $this->tagModel->updateSourceTags($params['tags'], $highlightId, Sources::HIGHLIGHT->value);
+        if ($params['tags']) {
+            $this->tagModel->updateSourceTags($params['tags'], $highlightId, Sources::HIGHLIGHT->value);
+        }
 
         if ($bookmarkDetail['status'] != 2) {
             $this->bookmarkModel->updateStartedDate($bookmarkDetail['id'], time());

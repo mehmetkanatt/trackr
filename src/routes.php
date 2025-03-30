@@ -19,7 +19,6 @@ $app->group('', function () {
     $this->post('/register', AuthController::class . ':register');
 })->add(new Middleware\Guest($container));
 
-// TODO Add authorization
 $app->group('/api', function () {
     $this->post('/bookmarks', BookmarkController::class . ':create');
     $this->post('/books', BookController::class . ':saveBook');

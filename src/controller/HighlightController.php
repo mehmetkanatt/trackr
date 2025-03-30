@@ -72,7 +72,7 @@ class HighlightController extends Controller
             $bookName = $book['author'] . ' - ' . $book['title'];
             $highlights = $this->highlightModel->getHighlightsByGivenField('book_id', $bookId);
             $data['pageTitle'] = "$bookName's Highlights | trackr";
-        } elseif (isset($queryString['type'])) {
+        } elseif (isset($queryString['type']) && !isset($queryString['search'])) {
             $type = $queryString['type'];
             if ($type === 'public') {
                 $highlights = $this->highlightModel->getHighlightsByGivenField('is_secret', 0);
@@ -82,7 +82,7 @@ class HighlightController extends Controller
                 $highlights = $this->highlightModel->getFavorites();
             }
 
-        } elseif (isset($queryString['search'])) {
+        } elseif (isset($queryString['search']) && isset($queryString['type'])) {
             $searchParam = trim($queryString['search']);
 
             if (isset($queryString['type']) && ValidatorUtil::validateIntegerByConstraints($queryString['type'], 0, 0)) {
@@ -456,12 +456,16 @@ class HighlightController extends Controller
     public function search(ServerRequestInterface $request, ResponseInterface $response)
     {
         $params = $request->getParsedBody();
+        $highlights = [];
 
         // OLD
         // $results = $this->highlightModel->searchHighlightMySQL($params['searchParam']);
 
         $searchParam = trim($params['searchParam']);
-        $highlights = $this->highlightModel->searchHighlightTypesense($searchParam);
+
+        if ($searchParam) {
+            $highlights = $this->highlightModel->searchHighlightTypesense($searchParam);
+        }
 
         $resource = [
             "highlights" => $highlights

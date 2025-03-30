@@ -28,7 +28,7 @@ CREATE TABLE `book_authors`
     `book_id`   int(11) NOT NULL,
     PRIMARY KEY (`id`),
     UNIQUE KEY `idx_author_id_book_id` (`author_id`, `book_id`),
-    KEY `idx_book_id` (`book_id`)
+    KEY         `idx_book_id` (`book_id`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
@@ -138,7 +138,7 @@ CREATE TABLE `books_ownership`
     `created_at` int(11) NOT NULL,
     PRIMARY KEY (`id`),
     UNIQUE KEY `unique_idx_bookid_user_id` (`book_id`, `user_id`),
-    KEY `idx_book_id` (`book_id`)
+    KEY          `idx_book_id` (`book_id`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
@@ -175,7 +175,7 @@ CREATE TABLE `chains`
 (
     `id`           int(11)                                NOT NULL AUTO_INCREMENT,
     `uid`          varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-    `name`         varchar(255) COLLATE utf8mb4_unicode_ci         DEFAULT NULL,
+    `name`         varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
     `type`         tinyint(1)                                      DEFAULT '1',
     `constant`     tinyint(4)                                      DEFAULT '0',
     `created_at`   int(11)                                NOT NULL,
@@ -192,7 +192,7 @@ CREATE TABLE `chains`
 CREATE TABLE `daily_reading_amounts`
 (
     `id`      int(11) NOT NULL AUTO_INCREMENT,
-    `amount`  float   NOT NULL,
+    `amount`  float NOT NULL,
     `date`    int(11) NOT NULL,
     `path_id` int(11) NOT NULL,
     `user_id` int(11) NOT NULL,
@@ -241,15 +241,15 @@ CREATE TABLE `highlight_versions`
 CREATE TABLE `highlights`
 (
     `id`           int(11)                             NOT NULL AUTO_INCREMENT,
-    `title`        varchar(255) COLLATE utf8mb4_unicode_ci      DEFAULT NULL,
+    `title`        varchar(255) COLLATE utf8mb4_unicode_ci  DEFAULT NULL,
     `highlight`    longtext COLLATE utf8mb4_unicode_ci NOT NULL,
-    `author`       varchar(1000) COLLATE utf8mb4_unicode_ci     DEFAULT NULL,
-    `source`       varchar(1000) COLLATE utf8mb4_unicode_ci     DEFAULT NULL,
+    `author`       varchar(1000) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+    `source`       varchar(1000) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
     `page`         int(11)                                      DEFAULT NULL,
-    `location`     varchar(45) COLLATE utf8mb4_unicode_ci       DEFAULT NULL,
+    `location`     varchar(45) COLLATE utf8mb4_unicode_ci   DEFAULT NULL,
     `link`         int(11)                                      DEFAULT NULL,
     `book_id`      int(11)                                      DEFAULT NULL,
-    `blog_path`    varchar(255) COLLATE utf8mb4_unicode_ci      DEFAULT NULL,
+    `blog_path`    varchar(255) COLLATE utf8mb4_unicode_ci  DEFAULT NULL,
     `type`         int(11)                                      DEFAULT '0',
     `is_secret`    int(11)                                      DEFAULT '1',
     `is_encrypted` int(11)                                      DEFAULT '0',
@@ -360,8 +360,8 @@ CREATE TABLE `tag_relationships`
     `deleted_at` int(11) DEFAULT NULL,
     `user_id`    int(11) DEFAULT NULL,
     PRIMARY KEY (`id`),
-    KEY `idx_source_id` (`source_id`),
-    KEY `idx_tag_id` (`tag_id`)
+    KEY          `idx_source_id` (`source_id`),
+    KEY          `idx_tag_id` (`tag_id`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
@@ -383,6 +383,7 @@ CREATE TABLE `users`
     `password`       varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
     `created`        int(11)                                 NOT NULL,
     `encryption_key` tinyblob                                NOT NULL,
+    `api_token`      varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
     PRIMARY KEY (`id`),
     UNIQUE KEY `username_UNIQUE` (`username`)
 ) ENGINE = InnoDB

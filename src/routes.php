@@ -5,6 +5,7 @@ use App\controller\AuthController;
 use App\controller\HomeController;
 use App\controller\BookController;
 use App\controller\BookmarkController;
+use App\controller\ApiController;
 use App\controller\DateTrackingController;
 use App\controller\HighlightController;
 use App\controller\ImageController;
@@ -20,7 +21,8 @@ $app->group('', function () {
 })->add(new Middleware\Guest($container));
 
 $app->group('/api', function () {
-    $this->post('/bookmarks', BookmarkController::class . ':create');
+    $this->post('/bookmarks', ApiController::class . ':addBookmark');
+    $this->post('/highlights', ApiController::class . ':addHighlight');
     $this->post('/books', BookController::class . ':saveBook');
     $this->put('/bookmarks/{uid}/title', BookmarkController::class . ':updateTitle');
 })->add(new Middleware\Authorization($container));

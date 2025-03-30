@@ -25,6 +25,10 @@ class Authorization extends Middleware
             throw CustomException::clientError(StatusCode::HTTP_UNAUTHORIZED, 'User not found!');
         }
 
+        $_SESSION['userInfos']['user_id'] = $user['id'];
+        $_SESSION['userInfos']['encryption_key'] = unserialize($user['encryption_key']);
+        $_SESSION['userInfos']['username'] = $user['username'];
+
         $response = $next($request, $response);
 
         return $response;

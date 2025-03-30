@@ -249,7 +249,7 @@ class BookmarkController extends Controller
             $highlightDetails['author'] = $username;
             $highlightDetails['source'] = 'Twitter';
         } else {
-            $highlightDetails['author'] = $bookmarkDetail['title'] ?: null;
+            $highlightDetails['author'] = $bookmarkDetail['title'];
             $highlightDetails['source'] = 'Bookmark Highlight';
         }
 
@@ -260,8 +260,8 @@ class BookmarkController extends Controller
             'id' => (string)$highlightId,
             'highlight' => $bookmarkDetail['highlight'],
             'is_deleted' => 0,
-            'author' => $bookmarkDetail['author'] ?: $_SESSION['userInfos']['username'],
-            'source' => $bookmarkDetail['source'] ?: '',
+            'author' => $highlightDetails['author'],
+            'source' => $highlightDetails['source'],
             'created' => (int)$now,
             'updated' => (int)$now,
             'is_encrypted' => 0,

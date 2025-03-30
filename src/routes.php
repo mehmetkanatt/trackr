@@ -24,7 +24,7 @@ $app->group('/api', function () {
     $this->post('/bookmarks', BookmarkController::class . ':create');
     $this->post('/books', BookController::class . ':saveBook');
     $this->put('/bookmarks/{uid}/title', BookmarkController::class . ':updateTitle');
-});
+})->add(new Middleware\Authorization($container));
 
 $app->group('', function () {
 

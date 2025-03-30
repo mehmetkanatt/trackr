@@ -74,9 +74,10 @@ class AuthModel
         $username = trim($username);
         $created = time();
         $encryptionKey = serialize(EncryptionUtil::createEncryptionKey());
+        $apiToken = bin2hex(random_bytes(32));
 
-        $sql = 'INSERT INTO users (username, password, created, encryption_key) 
-                VALUES(:username, :password, :created, :encryption_key)';
+        $sql = 'INSERT INTO users (username, password, created, encryption_key, api_token) 
+                VALUES(:username, :password, :created, :encryption_key, :api_token)';
 
         $stm = $this->dbConnection->prepare($sql);
 
@@ -84,12 +85,36 @@ class AuthModel
         $stm->bindParam(':password', $password, \PDO::PARAM_STR);
         $stm->bindParam(':created', $created, \PDO::PARAM_INT);
         $stm->bindParam(':encryption_key', $encryptionKey, \PDO::PARAM_STR);
+        $stm->bindParam(':api_token', $apiToken, \PDO::PARAM_STR);
 
         if (!$stm->execute()) {
             throw CustomException::dbError(StatusCode::HTTP_SERVICE_UNAVAILABLE, json_encode($stm->errorInfo()));
         }
 
         return true;
+    }
+
+    public function getUserByApiToken($apiToken)
+    {
+        $user = [];
+
+        $sql = 'SELECT id, username, created, encryption_key, api_token
+                FROM users
+                WHERE api_token = :api_token';
+
+        $stm = $this->dbConnection->prepare($sql);
+
+        $stm->bindParam(':api_token', $apiToken, \PDO::PARAM_STR);
+
+        if (!$stm->execute()) {
+            throw CustomException::dbError(StatusCode::HTTP_SERVICE_UNAVAILABLE, 'Something went wrong');
+        }
+
+        while ($row = $stm->fetch(\PDO::FETCH_ASSOC)) {
+            $user = $row;
+        }
+
+        return $user;
     }
 
 }

@@ -105,7 +105,7 @@ class BookmarkController extends Controller
             throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST, 'Bookmark cannot be empty!');
         }
 
-        $params['bookmark'] = URL::clearQueryParams($params['bookmark'], ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'fbclid', 'gclid', 'mc_cid', 'mc_eid', 'ref', 'ref_', 'refid', 'r', 'refsrc', 'ref_source', 'ref_source_', 'ref_sourceid', 'ref_sourceid_', 'refsrc']);
+        $params['bookmark'] = URL::clearQueryParams($params['bookmark'], ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'fbclid', 'gclid', 'mc_cid', 'mc_eid', 'ref', 'ref_', 'refid', 'r', 'refsrc', 'ref_source', 'ref_source_', 'ref_sourceid', 'ref_sourceid_', 'refsrc', 'triedRedirect']);
         $params['bookmark'] = trim($params['bookmark']);
 
         $bookmarkExist = $this->bookmarkModel->getParentBookmarkByBookmark($params['bookmark']);

@@ -7,6 +7,8 @@ class URL
     static function clearQueryParams($url, $partsToRemove = [], $removeFragment = true)
     {
         $parsedUrl = parse_url($url);
+        $predefinedList = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'fbclid', 'gclid', 'mc_cid', 'mc_eid', 'ref', 'ref_', 'refid', 'r', 'refsrc', 'ref_source', 'ref_source_', 'ref_sourceid', 'ref_sourceid_', 'refsrc', 'triedRedirect'];
+        $partsToRemove = array_merge($partsToRemove, $predefinedList);
 
         // Reconstruct the base URL without the fragment
         $cleanUrl = (isset($parsedUrl['scheme']) ? $parsedUrl['scheme'] . '://' : '') . $parsedUrl['host'] .

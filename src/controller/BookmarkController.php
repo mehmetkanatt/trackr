@@ -14,6 +14,7 @@ use App\util\lang;
 use App\rabbitmq\AmqpJobPublisher;
 use App\util\TwitterUtil;
 use App\util\Typesense;
+use App\util\URL;
 use \Psr\Http\Message\ServerRequestInterface;
 use \Psr\Http\Message\ResponseInterface;
 use Psr\Container\ContainerInterface;
@@ -104,10 +105,13 @@ class BookmarkController extends Controller
             throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST, 'Bookmark cannot be empty!');
         }
 
-        $bookmarkExist = $this->bookmarkModel->getParentBookmarkByBookmark(trim($params['bookmark']));
+        $params['bookmark'] = URL::clearQueryParams($params['bookmark'], ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'fbclid', 'gclid', 'mc_cid', 'mc_eid', 'ref', 'ref_', 'refid', 'r', 'refsrc', 'ref_source', 'ref_source_', 'ref_sourceid', 'ref_sourceid_', 'refsrc']);
+        $params['bookmark'] = trim($params['bookmark']);
+
+        $bookmarkExist = $this->bookmarkModel->getParentBookmarkByBookmark($params['bookmark']);
 
         if (!$bookmarkExist) {
-            $bookmarkID = $this->bookmarkModel->create(trim($params['bookmark']));
+            $bookmarkID = $this->bookmarkModel->create($params['bookmark']);
             $bookmarkCreatedBefore = false;
         } else {
             $bookmarkID = $bookmarkExist['id'];

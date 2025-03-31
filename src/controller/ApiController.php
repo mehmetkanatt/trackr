@@ -13,6 +13,7 @@ use App\util\ArrayUtil;
 use App\util\lang;
 use App\rabbitmq\AmqpJobPublisher;
 use App\util\Typesense;
+use App\util\URL;
 use \Psr\Http\Message\ServerRequestInterface;
 use \Psr\Http\Message\ResponseInterface;
 use Psr\Container\ContainerInterface;
@@ -46,18 +47,19 @@ class ApiController extends Controller
 
     private function addBookmarkFlow($bookmark, $title, $note = null)
     {
-        // todo add bookmark validation. for example remove fragments from url to prevent duplicate bookmarks
-        // https://chatgpt.com/c/67e97787-0780-8009-b803-a0a4537992f9
         $bookmarkCreatedBefore = true;
 
         if (!$bookmark) {
             throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST, 'Bookmark cannot be empty!');
         }
 
-        $bookmarkExist = $this->bookmarkModel->getParentBookmarkByBookmark(trim($bookmark));
+        $bookmark = URL::clearQueryParams($bookmark, ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'fbclid', 'gclid', 'mc_cid', 'mc_eid', 'ref', 'ref_', 'refid', 'r', 'refsrc', 'ref_source', 'ref_source_', 'ref_sourceid', 'ref_sourceid_', 'refsrc']);
+        $bookmark = trim($bookmark);
+
+        $bookmarkExist = $this->bookmarkModel->getParentBookmarkByBookmark($bookmark);
 
         if (!$bookmarkExist) {
-            $bookmarkID = $this->bookmarkModel->create(trim($bookmark));
+            $bookmarkID = $this->bookmarkModel->create($bookmark);
             $bookmarkCreatedBefore = false;
         } else {
             $bookmarkID = $bookmarkExist['id'];

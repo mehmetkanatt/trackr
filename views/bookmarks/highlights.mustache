@@ -85,6 +85,15 @@
             }
         });
 
+        $('#tags').select2({
+            placeholder: "Choose tags",
+            multiple: true,
+            theme: 'bootstrap4',
+            allowClear: true,
+            tags: true,              // allow adding new tags
+            tokenSeparators: [','],  // split new tags by comma
+        });
+
     });
 </script>
 </body>

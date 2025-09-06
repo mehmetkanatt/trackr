@@ -57,13 +57,9 @@ class BookmarkController extends Controller
     {
         $bookmarkUid = $args['uid'];
         $bookmarkId = $this->bookmarkModel->getBookmarkIdByUid($bookmarkUid);
-//        $details = $this->bookmarkModel->getChildBookmarkById($bookmarkId, $_SESSION['userInfos']['user_id']);
-        $highlights = $this->highlightModel->getHighlightsByGivenField('link',$bookmarkId);
+        $highlights = $this->highlightModel->getHighlightsByGivenField('link', $bookmarkId);
         $tags = $this->tagModel->getTagsBySourceId($bookmarkId, Sources::BOOKMARK->value);
-
-//        if ($details['keyword'] && !in_array($details['keyword'], $tags['tags'])) {
-//            $tags['imploded_comma'] .= ', ' . $details['keyword'];
-//        }
+        $globalTagsWithSelection = $this->tagModel->getGlobalTagsWithSelection((array)$tags['raw_tags']);
 
         $_SESSION['bookmarks']['highlights']['bookmarkID'] = $bookmarkId;
 
@@ -72,7 +68,7 @@ class BookmarkController extends Controller
             'highlights' => $highlights,
             'activeBookmarks' => 'active',
             'bookmarkUID' => $bookmarkUid,
-            'tags' => $tags['imploded_comma']
+            'globalTagsWithSelection' => $globalTagsWithSelection
         ];
 
         return $this->view->render($response, 'bookmarks/highlights.mustache', $data);

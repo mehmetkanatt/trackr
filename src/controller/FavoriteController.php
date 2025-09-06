@@ -36,6 +36,7 @@ class FavoriteController extends Controller
 
             if ($params['type'] === 'highlight') {
                 $type = Sources::HIGHLIGHT->value;
+                $_SESSION['badgeCounts']['favoriteHighlightsCount']++;
             } elseif ($params['type'] === 'bookmark') {
                 $type = Sources::BOOKMARK->value;
             } elseif ($params['type'] === 'book') {
@@ -65,6 +66,7 @@ class FavoriteController extends Controller
 
             if ($params['type'] === 'highlight') {
                 $type = Sources::HIGHLIGHT->value;
+                $_SESSION['badgeCounts']['favoriteHighlightsCount']--;
             } elseif ($params['type'] === 'bookmark') {
                 $type = Sources::BOOKMARK->value;
             } elseif ($params['type'] === 'book') {

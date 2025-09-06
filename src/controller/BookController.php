@@ -71,6 +71,7 @@ class BookController extends Controller
         $publishers = $this->bookModel->getPublishers();
         $books = $this->bookModel->getAllBooks();
         $paths = $this->bookModel->getPathsList(PathStatus::ACTIVE->value);
+        $tags = $this->tagModel->getSourceTagsByType(Sources::BOOK->value);
 
         $data = [
             'pageTitle' => 'All Books | trackr',
@@ -78,6 +79,7 @@ class BookController extends Controller
             'books' => $books,
             'publishers' => $publishers,
             'paths' => $paths,
+            'tags' => $tags,
             'activeBooks' => 'active',
             'showBooksDropdownList' => 'show',
         ];

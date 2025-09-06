@@ -3,6 +3,7 @@
 namespace App\util;
 
 use DateInterval;
+use DateTime;
 
 class TimeUtil
 {
@@ -24,7 +25,18 @@ class TimeUtil
 
     static function calculateAge($d1, $d2)
     {
-        return round(round(abs(strtotime($d1) - strtotime($d2)) / 86400) / 365, 3);
+        $date1 = new DateTime($d1);
+        $date2 = new DateTime($d2);
+        $diff = $date1->diff($date2);
+
+        // Age in years, including decimals
+        $years = $diff->y;
+        $months = $diff->m;
+        $days = $diff->d;
+
+        // Convert to fractional years
+        $age = $years + ($months / 12) + ($days / 365);
+        return round($age, 3);
     }
 
     static function calculateAgeV2($d1, $d2)

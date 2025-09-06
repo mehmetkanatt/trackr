@@ -42,9 +42,17 @@ class TagModel
 
     public function insertTagByChecking($sourceId, $tag, $sourceType)
     {
-        $tag = strtolower(strip_tags(trim($tag)));
+        $tag = strip_tags(trim($tag));
+        $tagId = $tag;
 
-        if ($tag) {
+        if (!$tag) {
+            return;
+        }
+
+        if (!is_numeric($tag)) {
+
+            $tag = strtolower($tag);
+
             $tagExist = $this->getTagByTag($tag);
             $tagId = $tagExist['id'];
 
@@ -52,8 +60,9 @@ class TagModel
                 $tagId = $this->createTag($tag);
             }
 
-            $this->createTagRelationship($sourceId, $tagId, $sourceType);
         }
+
+        $this->createTagRelationship($sourceId, $tagId, $sourceType);
     }
 
     public function createTag($tag)

@@ -16,9 +16,8 @@
 
             <a role="button" href="/highlights/{{id}}/details" class="badge badge-primary float-right"><span
                     class="fe fe-edit fe-8"></span></a>
-            {{#blog_path}}
-                <strong># {{blog_path}}</strong>
-            {{/blog_path}}
+
+                <strong>#{{id}} {{#blog_path}}{{blog_path}}{{/blog_path}}</strong>
 
             {{#is_secret}}<i class="fe fe-lock fe-12" data-toggle="tooltip" data-placement="top" title="Secret Highlight"></i>{{/is_secret}}
 

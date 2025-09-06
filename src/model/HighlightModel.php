@@ -640,7 +640,7 @@ class HighlightModel
         return $highlights;
     }
 
-    public function getHighlightAuthors()
+    public function getHighlightAuthors($author = null)
     {
         $result = [];
 
@@ -656,13 +656,18 @@ class HighlightModel
         }
 
         while ($row = $stm->fetch(\PDO::FETCH_ASSOC)) {
+
+            if ($author !== null && trim($row['author']) === $author) {
+                $row['selected'] = 'selected';
+            }
+
             $result[] = $row;
         }
 
         return $result;
     }
 
-    public function getHighlightSources()
+    public function getHighlightSources($source = null)
     {
         $result = [];
 
@@ -678,6 +683,11 @@ class HighlightModel
         }
 
         while ($row = $stm->fetch(\PDO::FETCH_ASSOC)) {
+
+            if ($source !== null && trim($row['source']) === $source) {
+                $row['selected'] = 'selected';
+            }
+
             $result[] = $row;
         }
 

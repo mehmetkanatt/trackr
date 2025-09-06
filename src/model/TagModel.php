@@ -152,6 +152,7 @@ class TagModel
             if ($tag !== null && $tag == $row['tag']) {
                 $row['href'] = '';
                 $row['badge'] = 'primary';
+                $row['selected'] = 'selected';
             }
 
             $list[] = $row;

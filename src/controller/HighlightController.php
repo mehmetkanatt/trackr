@@ -100,10 +100,9 @@ class HighlightController extends Controller
             $highlights = $this->highlightModel->getHighlights($_ENV['HIGHLIGHT_LIMIT']);
         }
 
-        $tags = $this->tagModel->getSourceTagsByType(Sources::HIGHLIGHT->value, $queryString['tag']);
         $books = $_SESSION['books']['list'] ?? $this->bookModel->getAuthorBookList();
 
-        $data['headerTags'] = $tags;
+        $data['filterTags'] = $this->tagModel->getSourceTagsByType(Sources::HIGHLIGHT->value, $queryString['tag']);
         $data['highlights'] = $highlights;
         $data['books'] = $books;
 

@@ -48,6 +48,7 @@ class BookmarkController extends Controller
         }
 
         $data['filterTags'] = $this->tagModel->getSourceTagsByType(Sources::BOOKMARK->value, $queryString['tag']);
+        $data['globalTags'] = $this->tagModel->getGlobalTagsWithSelection([$queryString['tag']]);
 
         return $this->view->render($response, 'bookmarks/index.mustache', $data);
     }

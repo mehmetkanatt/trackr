@@ -26,8 +26,12 @@
                                     <input type="text" id="note" placeholder="Note" class="form-control">
                                 </div>
                                 <div class="form-group">
-                                    <input id="tags" placeholder="Tags" type="text"
-                                           class="form-control enterButtonKeyPress" value="{{defaultTag}}">
+                                    <select id="tags" name="tags[]" class="form-control select2-multi">
+                                        <option disabled selected></option>
+                                        {{#globalTags}}
+                                            <option value="{{id}}" {{selected}}>{{tag}}</option>
+                                        {{/globalTags}}
+                                    </select>
                                 </div>
                                 <div class="form-group">
                                     <button id="addBookmark" type="button" class="btn btn-primary">Add</button>
@@ -184,6 +188,15 @@
 
             $(btnContext).delay(3000).removeAttr("disabled").addClass('btn-primary').html('Add');
         }
+
+        $('#tags').select2({
+            placeholder: "Choose tags",
+            multiple: true,
+            theme: 'bootstrap4',
+            allowClear: true,
+            tags: true,              // allow adding new tags
+            tokenSeparators: [','],  // split new tags by comma
+        });
 
         $('.enterButtonKeyPress').bind('keypress', function (e) {
             if (e.keyCode == 13) {

@@ -38,7 +38,6 @@ class BookmarkController extends Controller
     {
         $queryString = $request->getQueryParams();
         $data['activeBookmarks'] = 'active';
-        $data['defaultTag'] = 'technical';
 
         if (isset($queryString['tag']) && $queryString['tag']) {
             $data['pageTitle'] = "Bookmarks #{$queryString['tag']} | trackr";

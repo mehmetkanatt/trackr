@@ -19,15 +19,22 @@ class TagModel
 
     public function updateSourceTags($tags, $sourceId, $sourceType)
     {
+        if (!$tags) {
+            return;
+        }
 
-        if (strpos($tags, ',') !== false) {
+        if (is_string($tags) && strpos($tags, ',') !== false) {
             $tags = explode(',', $tags);
 
             foreach ($tags as $tag) {
                 $this->insertTagByChecking($sourceId, $tag, $sourceType);
             }
 
-        } else {
+        } elseif (is_array($tags)) {
+            foreach ($tags as $tag) {
+                $this->insertTagByChecking($sourceId, $tag, $sourceType);
+            }
+        } elseif (is_string($tags) && strpos($tags, ',') === false) {
             $this->insertTagByChecking($sourceId, $tags, $sourceType);
         }
 

@@ -26,16 +26,6 @@
                         </div>
                     </div>
 
-                    <div class="card mb-4">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">Add Author</h5>
-                                <input id="author" placeholder="Type new author, press enter" type="text"
-                                       class="form-control">
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- simple table -->
                     <div class="card mb-4">
                         <div class="card">
@@ -135,16 +125,6 @@
 
             if (result !== false) {
                 $(this).remove();
-            }
-        });
-
-        $('#author').bind('keypress', function (e) {
-            if (e.keyCode == 13) {
-                var result = ajaxCall('POST', "/authors", "author=" + $('#author').val())
-
-                if (result !== false) {
-                    location.reload();
-                }
             }
         });
 

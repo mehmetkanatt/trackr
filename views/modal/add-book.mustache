@@ -20,6 +20,7 @@
                     <div class="form-group">
                         <label for="authors">Author:</label>
                         <select id="authors" name="authors[]" class="form-control select2-multi">
+                            <option disabled selected></option>
                             {{#authors}}
                                 <option value="{{id}}">{{author}}</option>
                             {{/authors}}
@@ -102,7 +103,12 @@
 
                     <div class="form-group">
                         <label for="tags">Tags:</label>
-                        <input id="tags" name="tags" placeholder="Tags" type="text" class="form-control">
+                        <select id="tags" name="tags[]" class="form-control select2-multi">
+                            <option disabled selected></option>
+                            {{#tags}}
+                                <option value="{{id}}">{{tag}}</option>
+                            {{/tags}}
+                        </select>
                     </div>
 
                     <div class="form-group">
@@ -122,9 +128,13 @@
 <script>
     $(document).ready(function () {
 
-        $('.select2-multi').select2({
+        $('#authors').select2({
             multiple: true,
             theme: 'bootstrap4',
+            placeholder: "Select or add author(s)",
+            allowClear: true,
+            tags: true,              // allow adding new tags
+            tokenSeparators: [','],  // split new tags by comma
         });
 
         $("#save").on('click', function (e) {

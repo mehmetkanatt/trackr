@@ -401,7 +401,14 @@ class BookController extends Controller
             $this->tagModel->updateSourceTags($params['tags'], $bookId, Sources::BOOK->value);
         }
 
-        foreach ($authors as $authorId) {
+        foreach ($authors as $author) {
+
+            $authorId = $author;
+
+            if (!is_numeric($author)) {
+                $authorId = $this->bookModel->insertAuthorByChecking($author);
+            }
+
             $this->bookModel->insertBookAuthor($bookId, $authorId);
         }
 

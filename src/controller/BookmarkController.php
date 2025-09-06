@@ -81,6 +81,8 @@ class BookmarkController extends Controller
 
         $details = $this->bookmarkModel->getChildBookmarkById($bookmarkId, $_SESSION['userInfos']['user_id']);
 
+        $details['globalTagsWithSelection'] = $this->tagModel->getGlobalTagsWithSelection((array)$details['tags']['raw_tags']);
+
         $data = [
             'pageTitle' => 'Bookmark\'s Details | trackr',
             'details' => $details,

@@ -646,7 +646,8 @@ class HighlightModel
 
         $sql = 'SELECT count(*) AS highlightCount, author FROM highlights
                 WHERE user_id = :user_id
-                GROUP BY author';
+                GROUP BY author
+                ORDER BY author';
 
         $stm = $this->dbConnection->prepare($sql);
         $stm->bindParam(':user_id', $_SESSION['userInfos']['user_id'], \PDO::PARAM_INT);
@@ -673,7 +674,8 @@ class HighlightModel
 
         $sql = 'SELECT count(*) AS highlightCount, source FROM highlights
                 WHERE user_id = :user_id
-                GROUP BY source';
+                GROUP BY source
+                ORDER BY source';
 
         $stm = $this->dbConnection->prepare($sql);
         $stm->bindParam(':user_id', $_SESSION['userInfos']['user_id'], \PDO::PARAM_INT);

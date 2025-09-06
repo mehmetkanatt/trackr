@@ -192,6 +192,7 @@ class TagModel
         }
 
         if ($tags) {
+            $list['raw_tags'] = $tags;
             $list['imploded_blank'] = implode(' ', $tags);
             $list['imploded_comma'] = implode(', ', $tags);
             $list['imploded_hashtag_blank'] = implode(' ', $hashtags);

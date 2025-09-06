@@ -30,8 +30,8 @@
                     <div class="form-row">
                         <div class="form-group col-md-4">
                             <label for="publisher">Publisher:</label>
-                            <select id="publisher" name="publisher" class="form-control">
-                                <option disabled selected>Choose publisher</option>
+                            <select id="publisher" name="publisher" class="form-control select2-multi">
+                                <option disabled selected></option>
                                 {{#publishers}}
                                     <option value="{{id}}">{{name}}</option>
                                 {{/publishers}}
@@ -135,6 +135,13 @@
             allowClear: true,
             tags: true,              // allow adding new tags
             tokenSeparators: [','],  // split new tags by comma
+        });
+
+        $('#publisher').select2({
+            theme: 'bootstrap4',
+            placeholder: "Select or add publisher",
+            allowClear: true,
+            tags: true,              // allow adding new tags
         });
 
         $("#save").on('click', function (e) {

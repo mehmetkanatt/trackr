@@ -390,6 +390,11 @@ class BookController extends Controller
 
         }
 
+        if (isset($params['publisher']) && !is_numeric($params['publisher'])) {
+            $publisherDetails = $this->bookModel->getPublisher($params['publisher']);
+            $params['publisher'] = !$publisherDetails ? $this->bookModel->insertPublisher($params['publisher']) : $publisherDetails['id'];
+        }
+
         if (!$params['bookTitle']) {
             throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST, 'Title cannot be null');
         }

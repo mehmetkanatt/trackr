@@ -144,6 +144,14 @@
             tags: true,              // allow adding new tags
         });
 
+        $('#tags').select2({
+            multiple: true,
+            theme: 'bootstrap4',
+            placeholder: "Select or add tag(s)",
+            allowClear: true,
+            tags: true,              // allow adding new tags
+        });
+
         $("#save").on('click', function (e) {
 
             var formData = $('#bookSaveForm').serialize();

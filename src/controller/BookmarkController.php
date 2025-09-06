@@ -48,8 +48,7 @@ class BookmarkController extends Controller
             $data['bookmarks'] = $this->bookmarkModel->getBookmarks();
         }
 
-        $data['bookmarkCategories'] = $this->tagModel->getSourceTagsByType(Sources::BOOKMARK->value,
-            $queryString['tag']);
+        $data['filterTags'] = $this->tagModel->getSourceTagsByType(Sources::BOOKMARK->value, $queryString['tag']);
 
         return $this->view->render($response, 'bookmarks/index.mustache', $data);
     }

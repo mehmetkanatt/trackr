@@ -49,12 +49,12 @@
                                     <div id="collapse1" class="collapse" aria-labelledby="heading1"
                                          data-parent="#accordion1">
                                         <div class="card-body">
-                                            {{#bookmarkCategories}}
+                                            {{#filterTags}}
                                             <a role="button" href="/bookmarks{{#href}}?tag={{tag}}{{/href}}"
                                                 class="badge badge-{{badge}}">
-                                                <strong>#{{tag}} ({{tag_count}})</strong>
+                                                <strong>#{{tag_with_count}}</strong>
                                                 </a>
-                                            {{/bookmarkCategories}}
+                                            {{/filterTags}}
                                         </div>
                                     </div>
                                 </div>

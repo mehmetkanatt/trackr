@@ -32,10 +32,21 @@
                                 <textarea id="highlight" hidden></textarea>
 
                                 <div class="input-group input-group-md">
-                                    <input id="author" placeholder="Author" type="text"
-                                           class="form-control enterButtonKeyPress">
-                                    <input id="source" placeholder="Source" type="text"
-                                           class="form-control enterButtonKeyPress">
+
+                                    <select id="author" name="author" class="form-control select2-multi">
+                                        <option disabled selected></option>
+                                        {{#authors}}
+                                            <option value="{{author}}">{{author}}</option>
+                                        {{/authors}}
+                                    </select>
+
+                                    <select id="source" name="source" class="form-control select2-multi">
+                                        <option disabled selected></option>
+                                        {{#sources}}
+                                            <option value="{{source}}">{{source}}</option>
+                                        {{/sources}}
+                                    </select>
+
                                     <input id="title" placeholder="Title" type="text"
                                            class="form-control enterButtonKeyPress">
                                     <input id="blogPath" placeholder="Blog Path" type="text"
@@ -47,8 +58,12 @@
 
                                 <div class="form-row">
                                     <div class="form-group col-4">
-                                        <input id="tags" placeholder="Tags" type="text" {{#tag}}value="{{.}}"{{/tag}}
-                                               class="form-control enterButtonKeyPress">
+                                        <select id="tags" name="tags[]" class="form-control select2-multi">
+                                            <option disabled selected></option>
+                                            {{#globalTags}}
+                                                <option value="{{id}}" {{selected}}>{{tag}}</option>
+                                            {{/globalTags}}
+                                        </select>
                                     </div>
                                     <div class="form-group col-2">
                                         <input id="page" placeholder="Page" type="number"
@@ -177,7 +192,30 @@
             $(this).tooltip('hide');
         });
 
-        $('.select2-multi').select2({
+        $('#author').select2({
+            tags: true,              // allow creating new entries
+            placeholder: "Select or add an author",
+            allowClear: true,        // user can clear the selection
+            theme: 'bootstrap4',
+        });
+
+        $('#source').select2({
+            tags: true,              // allow creating new entries
+            placeholder: "Select or add a source",
+            allowClear: true,        // user can clear the selection
+            theme: 'bootstrap4',
+        });
+
+        $('#tags').select2({
+            placeholder: "Choose tags",
+            multiple: true,
+            theme: 'bootstrap4',
+            allowClear: true,
+            tags: true,              // allow adding new tags
+            tokenSeparators: [','],  // split new tags by comma
+        });
+
+        $('#book').select2({
             placeholder: "Reference with books",
             multiple: false,
             theme: 'bootstrap4',
@@ -271,10 +309,10 @@
             });
 
             var highlight = simplemde.value();
-            var author = $('#author').val();
-            var source = $('#source').val();
+            var author = $('#author').val() || "";
+            var source = $('#source').val() || "";
             var page = $('#page').val();
-            var tags = $('#tags').val();
+            var tags = $('#tags').val() || "";
             var title = $('#title').val();
             var is_encrypted = $('#is_encrypted').val();
             var blogPath = $('#blogPath').val();

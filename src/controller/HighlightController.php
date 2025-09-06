@@ -49,7 +49,6 @@ class HighlightController extends Controller
             $typesenseResult = $this->highlightModel->searchHighlightTypesense('#' . $queryString['tag']);
             $highlights = array_merge($highlights, $typesenseResult);
             $data['pageTitle'] = "Highlights #$tagQueryString | trackr";
-            $data['tag'] = $tagQueryString;
         } elseif (isset($queryString['author'])) {
             $highlights = $this->highlightModel->getHighlightsByGivenField('author', $queryString['author'],
                 $_ENV['HIGHLIGHT_LIMIT']);
@@ -103,8 +102,11 @@ class HighlightController extends Controller
         $books = $_SESSION['books']['list'] ?? $this->bookModel->getAuthorBookList();
 
         $data['filterTags'] = $this->tagModel->getSourceTagsByType(Sources::HIGHLIGHT->value, $queryString['tag']);
+        $data['globalTags'] = $this->tagModel->getGlobalTagsWithSelection([$queryString['tag']]);
         $data['highlights'] = $highlights;
         $data['books'] = $books;
+        $data['authors'] = $this->highlightModel->getHighlightAuthors();
+        $data['sources'] = $this->highlightModel->getHighlightSources();
 
         return $this->view->render($response, 'highlights/index.mustache', $data);
     }
@@ -119,6 +121,10 @@ class HighlightController extends Controller
         $previousID = $this->highlightModel->getPreviousHighlight($highlightID);
         //$this->highlightModel->updateUpdatedFieldByHighlightId($highlightID);
         $books = $this->bookModel->getAuthorBookList();
+        $detail['authors'] = $this->highlightModel->getHighlightAuthors($detail['author']);
+        $detail['sources'] = $this->highlightModel->getHighlightSources($detail['source']);
+
+        $detail['globalTagsWithSelection'] = $this->tagModel->getGlobalTagsWithSelection($detail['tags']['raw_tags']);
 
         foreach ($books as $key => $book) {
             if ($book['id'] === $detail['book_id']) {

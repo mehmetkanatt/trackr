@@ -41,12 +41,20 @@
 
                                     <div class="form-row">
                                         <div class="form-group col-md-6">
-                                            <input id="author" placeholder="Author" type="text" class="form-control"
-                                                   value="{{author}}">
+                                            <select id="author" name="author" class="form-control select2-multi">
+                                                <option disabled selected></option>
+                                                {{#authors}}
+                                                    <option value="{{author}}" {{selected}}>{{author}}</option>
+                                                {{/authors}}
+                                            </select>
                                         </div>
                                         <div class="form-group col-md-6">
-                                            <input id="source" placeholder="Source" type="text" class="form-control"
-                                                   value="{{source}}">
+                                            <select id="source" name="source" class="form-control select2-multi">
+                                                <option disabled selected></option>
+                                                {{#sources}}
+                                                    <option value="{{source}}" {{selected}}>{{source}}</option>
+                                                {{/sources}}
+                                            </select>
                                         </div>
                                     </div>
 
@@ -89,8 +97,12 @@
                                     </div>
 
                                     <div class="form-group">
-                                        <input id="tags" placeholder="Tags" type="text" class="form-control"
-                                               value="{{#tags}}{{imploded_comma}}{{/tags}}">
+                                        <select id="tags" name="tags[]" class="form-control select2-multi" multiple="multiple">
+                                            <option disabled selected></option>
+                                            {{#globalTagsWithSelection}}
+                                                <option value="{{id}}" {{selected}}>{{tag}}</option>
+                                            {{/globalTagsWithSelection}}
+                                        </select>
                                     </div>
 
                                     <div class="form-group custom-control custom-checkbox">
@@ -139,15 +151,34 @@
                                     <textarea id="comment" hidden></textarea>
                                 </div>
                                 <div class="form-group">
-                                    <input id="commentAuthor" placeholder="Author" type="text" class="form-control"
-                                           value="{{#detail}}{{author}}{{/detail}}">
+                                    <select id="commentAuthor" name="author" class="form-control select2-multi">
+                                        <option disabled selected></option>
+                                        {{#detail}}
+                                            {{#authors}}
+                                                <option value="{{author}}" {{selected}}>{{author}}</option>
+                                            {{/authors}}
+                                        {{/detail}}
+                                    </select>
                                 </div>
                                 <div class="form-group">
-                                    <input id="commentSource" placeholder="Source" type="text" class="form-control"
-                                           value="{{#detail}}{{source}}{{/detail}}">
+                                    <select id="commentSource" name="source" class="form-control select2-multi">
+                                        <option disabled selected></option>
+                                        {{#detail}}
+                                            {{#sources}}
+                                                <option value="{{source}}" {{selected}}>{{source}}</option>
+                                            {{/sources}}
+                                        {{/detail}}
+                                    </select>
                                 </div>
                                 <div class="form-group">
-                                    <input id="commentTags" placeholder="Tags" type="text" class="form-control">
+                                    <select id="commentTags" name="tags[]" class="form-control select2-multi" multiple="multiple">
+                                        <option disabled selected></option>
+                                        {{#detail}}
+                                            {{#globalTagsWithSelection}}
+                                                <option value="{{id}}" {{selected}}>{{tag}}</option>
+                                            {{/globalTagsWithSelection}}
+                                        {{/detail}}
+                                    </select>
                                 </div>
                                 <div class="form-group custom-control custom-checkbox">
                                     <input type="checkbox" class="custom-control-input" id="is_comment_encrypted">
@@ -213,9 +244,55 @@
             uploadUrl: '/images'
         });
 
-        $('.select2-multi').select2({
+        $('#author').select2({
+            tags: true,              // allow creating new entries
+            placeholder: "Select or add an author",
+            allowClear: true,        // user can clear the selection
+            theme: 'bootstrap4',
+        });
+
+        $('#source').select2({
+            tags: true,              // allow creating new entries
+            placeholder: "Select or add a source",
+            allowClear: true,        // user can clear the selection
+            theme: 'bootstrap4',
+        });
+
+        $('#tags').select2({
+            placeholder: "Choose tags",
+            multiple: true,
+            theme: 'bootstrap4',
+            allowClear: true,
+            tags: true,              // allow adding new tags
+            tokenSeparators: [','],  // split new tags by comma
+        });
+
+        $('#commentTags').select2({
+            placeholder: "Choose tags",
+            multiple: true,
+            theme: 'bootstrap4',
+            allowClear: true,
+            tags: true,              // allow adding new tags
+            tokenSeparators: [','],  // split new tags by comma
+        });
+
+        $('#book').select2({
             placeholder: "Reference with books",
             multiple: false,
+            theme: 'bootstrap4',
+        });
+
+        $('#commentAuthor').select2({
+            tags: true,              // allow creating new entries
+            placeholder: "Select or add an author",
+            allowClear: true,        // user can clear the selection
+            theme: 'bootstrap4',
+        });
+
+        $('#commentSource').select2({
+            tags: true,              // allow creating new entries
+            placeholder: "Select or add a source",
+            allowClear: true,        // user can clear the selection
             theme: 'bootstrap4',
         });
 

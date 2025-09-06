@@ -148,6 +148,7 @@ class TagModel
 
             $row['badge'] = 'secondary';
             $row['href'] = $row['tag'];
+            $row['tag_with_count'] = $row['tag'] . ' (' . $row['tag_count'] . ')';
 
             if ($tag !== null && $tag == $row['tag']) {
                 $row['href'] = '';

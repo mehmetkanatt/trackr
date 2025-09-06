@@ -184,6 +184,45 @@ class TagModel
         return $list;
     }
 
+    public function getGlobalTagsWithSelection($selectedTags = [])
+    {
+        $sql = 'SELECT 
+                    t.id,
+                    t.tag,
+                    COUNT(tr.id) AS tag_count
+                FROM tags t
+                LEFT JOIN tag_relationships tr ON t.id = tr.tag_id
+                    AND tr.user_id = :user_id
+                GROUP BY t.id, t.tag
+                ORDER BY tag_count DESC;';
+
+        $stm = $this->dbConnection->prepare($sql);
+        $stm->bindParam(':user_id', $_SESSION['userInfos']['user_id'], \PDO::PARAM_INT);
+
+        if (!$stm->execute()) {
+            throw CustomException::dbError(StatusCode::HTTP_SERVICE_UNAVAILABLE, json_encode($stm->errorInfo()));
+        }
+
+        $list = [];
+
+        while ($row = $stm->fetch(\PDO::FETCH_ASSOC)) {
+
+            $row['badge'] = 'secondary';
+            $row['href'] = $row['tag'];
+            $row['tag_with_count'] = $row['tag'] . ' (' . $row['tag_count'] . ')';
+
+            if (in_array($row['tag'], $selectedTags ?? [])) {
+                $row['href'] = '';
+                $row['badge'] = 'primary';
+                $row['selected'] = 'selected';
+            }
+
+            $list[] = $row;
+        }
+
+        return $list;
+    }
+
     public function getTagByTag($tag)
     {
         $sql = 'SELECT id, tag

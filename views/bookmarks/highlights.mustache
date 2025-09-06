@@ -25,8 +25,12 @@
                                 <textarea id="highlight" hidden></textarea>
 
                                 <div class="input-group input-group-lg">
-                                    <input id="tags" placeholder="Tags" type="text" value="{{tags}}"
-                                           class="form-control enterButtonKeyPress">
+                                    <select id="tags" name="tags[]" class="form-control select2-multi" multiple="multiple">
+                                        <option disabled selected></option>
+                                        {{#globalTagsWithSelection}}
+                                            <option value="{{id}}" {{selected}}>{{tag}}</option>
+                                        {{/globalTagsWithSelection}}
+                                    </select>
                                 </div>
                             </div>
                         </div>

@@ -23,7 +23,7 @@
 
         </div>
 
-        <div class="card-body">
+        <div class="card-body clamp">
 
             {{{highlight}}}
 
@@ -51,6 +51,10 @@
                 <strong>{{{imploded_link_blank}}}</strong>
         </div>
         {{/tags}}
+
+        {{#expandable}}
+            <a href="javascript:void(0)" class="btn btn-link p-0 toggleCard float-left">Show more</a>
+        {{/expandable}}
     </div>
     <br class="highlightCardBR">
 {{/highlights}}

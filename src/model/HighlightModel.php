@@ -167,6 +167,12 @@ class HighlightModel
 
         $highlight['ultimate_source'] = $source;
 
+        $highlight['expandable'] = false;
+
+        if (strlen($highlight['highlight']) > 50) {
+            $highlight['expandable'] = true;
+        }
+
         $highlight['highlight'] = $markdownClient->convert($highlight['highlight']);
 
         $highlight['parent_highlight'] = $this->getParentHighlightBySubHighlightID($highlight['id']);

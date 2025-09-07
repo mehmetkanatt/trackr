@@ -7,6 +7,19 @@
     <link rel="stylesheet" href="/css/version-diff.css">
     <link rel="stylesheet" href="/css/highlightjs/default.min.css">
     <link rel="stylesheet" href="/css/markdown.css">
+
+    <style>
+        .clamp {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;   /* number of lines to show */
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .clamp.expanded {
+            -webkit-line-clamp: unset; /* remove limit when expanded */
+        }
+    </style>
 </head>
 
 <body class="vertical dark">
@@ -144,6 +157,12 @@
 
 <script>
     $(document).ready(function () {
+
+        $(document).on('click', '.toggleCard', function() {
+            let body = $(this).closest('.card').find('.card-body');
+            body.toggleClass('expanded');
+            $(this).text(body.hasClass('expanded') ? 'Show less' : 'Show more');
+        });
 
         $(document).on('keydown', function (e) {
             if (e.metaKey && e.keyCode === 13) {

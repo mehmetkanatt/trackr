@@ -59,7 +59,7 @@ class LogController extends Controller
         if ($todayLog) {
             $_SESSION['logs']['todays_log'] = $todayLog['log'];
         } else {
-            $this->logModel->insert($today, null);
+            $this->logModel->insert($today);
         }
 
         $chains = $this->chainModel->getChainsByShowInLogs(1);
@@ -125,46 +125,6 @@ class LogController extends Controller
         return $this->view->render($response, 'logs/index.mustache', $data);
     }
 
-    public function logsVersions(ServerRequestInterface $request, ResponseInterface $response, $args)
-    {
-        $date = htmlspecialchars($args['date']);
-        $versionDiffs = [];
-
-        $versions = $this->logModel->getVersionsByDate($date);
-        $latest = $this->logModel->getLog($date);
-        $newString = $latest['log'];
-
-        $latestDiff = DiffHelper::calculate(
-            $newString,
-            $newString,
-            'Inline',
-            VersionDiffUtil::logsDiffOptions(),
-            VersionDiffUtil::logsRendererOptions(),
-        );
-        $versionDiffs[] = ['diff' => $latestDiff, 'created_at' => 'Latest'];
-
-        foreach ($versions as $version) {
-            $new = $newString;
-            $old = $version['old'];
-            $sideBySideResult = DiffHelper::calculate(
-                $old,
-                $new,
-                'Inline',
-                VersionDiffUtil::logsDiffOptions(),
-                VersionDiffUtil::logsRendererOptions(),
-            );
-
-            $versionDiffs[] = ['diff' => $sideBySideResult, 'created_at' => $version['created_at']];
-            $newString = $version['old'];
-        }
-
-        $resource['data']['versionDiffs'] = $versionDiffs;
-        $resource['data']['date'] = $date;
-        $resource['responseCode'] = StatusCode::HTTP_OK;
-
-        return $this->response($resource['responseCode'], $resource);
-    }
-
     public function save(ServerRequestInterface $request, ResponseInterface $response)
     {
         $params = $request->getParsedBody();
@@ -176,28 +136,24 @@ class LogController extends Controller
 
         $todaysLog = $this->logModel->getLog($today);
 
+        $highlightParams = [
+            'highlight' => $params['log'],
+            'book' => null,
+            'source' => 'Activity Log',
+            'type' => 2
+        ];
+
         if ($todaysLog) {
-
-            $previousLog = $_SESSION['logs']['todays_log'] ?? null;
-
-            if ($params['log'] !== $previousLog) {
-                $this->logModel->update($today, $params['log']);
-
-                if ($todaysLog['log']) {
-                    $this->logModel->saveOldVersion($todaysLog['id'], $todaysLog['log']);
-                }
-                $resource['message'] = "Saved successfully";
-            } else {
-                $resource['message'] = "Did not save. Logs are equal";
-            }
-
+            $this->highlightModel->updateOperations($todaysLog['highlight_id'], $highlightParams);
         } else {
             // while saving the log, date might change
-            $this->logModel->insert($today, $params['log']);
+            $highlightId = $this->highlightModel->createOperations($highlightParams);
+            $this->logModel->insert($today, $highlightId);
         }
 
         $_SESSION['logs']['todays_log'] = $todaysLog['log'];
 
+        $resource['message'] = "Saved successfully";
         $resource['responseCode'] = StatusCode::HTTP_OK;
 
         return $this->response($resource['responseCode'], $resource);

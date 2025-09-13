@@ -209,75 +209,9 @@ class HighlightController extends Controller
     public function update(ServerRequestInterface $request, ResponseInterface $response, $args)
     {
         $highlightID = $args['id'];
-        $params = ArrayUtil::trimArrayElements((array)$request->getParsedBody());
-        $highlightDetails = $this->highlightModel->getHighlightByID($highlightID);
-        $doIndex = false;
+        $params = (array)$request->getParsedBody();
 
-        if (isset($_SESSION['highlights']['not_editable'][$highlightID])) {
-            throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST, lang\En::HIGHLIGHT_NOT_EDITABLE);
-        }
-
-        if (!$highlightDetails) {
-            throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST, lang\En::HIGHLIGHT_NOT_FOUND);
-        }
-
-        if (!isset($params['highlight']) || !$params['highlight']) {
-            throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST, lang\En::HIGHLIGHT_CANNOT_BE_NULL);
-        }
-
-        if (isset($params['is_encrypted']) && $params['is_encrypted'] === 'Yes') {
-            $params['is_encrypted'] = 1;
-            $params['highlight'] = EncryptionUtil::encrypt($params['highlight']);
-        } else {
-            $doIndex = true;
-            $params['is_encrypted'] = 0;
-        }
-
-        $params['updated'] = time();
-        $params['book_id'] = null;
-
-        if (isset($params['book']) && $params['book'] !== 'null') {
-            $params['book_id'] = $this->bookModel->getBookIdByUid($params['book']);
-        }
-
-        $this->tagModel->deleteTagsBySourceId($highlightID, Sources::HIGHLIGHT->value);
-        $this->tagModel->updateSourceTags($params['tags'], $highlightID, Sources::HIGHLIGHT->value);
-        $this->highlightModel->update($highlightID, $params);
-
-        if ($highlightDetails['highlight'] !== $params['highlight']) {
-            $this->highlightModel->addChangeLog($highlightID, $highlightDetails['highlight']);
-
-            if ($doIndex) {
-                $typesenseClient = new Typesense('highlights');
-
-                $searchParameters = [
-                    'q' => '*',
-                    // Query string; using '*' for a match-all search
-                    'filter_by' => "id:=$highlightID && user_id:={$_SESSION['userInfos']['user_id']}",
-                    // Use the id field in filter_by
-                    'fields' => 'id,user_id'
-                    // Specify the fields to include in the results
-                ];
-                $typesenseSearchResult = $typesenseClient->searchDocuments($searchParameters);
-
-                if ($typesenseSearchResult['found']) {
-                    $document = [
-                        'highlight' => $params['highlight'],
-                        'is_deleted' => 0,
-                        'user_id' => (int)$_SESSION['userInfos']['user_id'],
-                        'author' => $params['author'] ?: $_SESSION['userInfos']['username'],
-                        'source' => $params['source'] ?: '',
-                        'created' => (int)$highlightDetails['created'],
-                        'updated' => (int)$params['updated'],
-                        'is_encrypted' => 0,
-                        'is_secret' => (int)$params['is_secret'],
-                        'blog_path' => $params['blogPath'] ?? '',
-                    ];
-                    $typesenseClient->updateDocument((string)$highlightID, $document);
-                }
-
-            }
-        }
+        $this->highlightModel->updateOperations($highlightID, $params);
 
         $resource = [
             "message" => lang\En::HIGHLIGHT_SUCCESSFULLY_UPDATED
@@ -288,76 +222,14 @@ class HighlightController extends Controller
 
     public function create(ServerRequestInterface $request, ResponseInterface $response)
     {
-        $params = ArrayUtil::trimArrayElements((array)$request->getParsedBody());
-        $doIndex = false;
-        $now = time();
+        $params = (array)$request->getParsedBody();
 
-        if (!isset($params['highlight']) || !$params['highlight']) {
-            throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST, lang\En::HIGHLIGHT_CANNOT_BE_NULL);
-        }
-
-        if (str_word_count($params['highlight']) < 2) {
-            throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST, lang\En::HIGHLIGHT_MUST_BE_LONGER);
-        }
-
-        // OLD WAY
-        $highlightExist = $this->highlightModel->searchHighlight($params['highlight']);
-
-        if ($highlightExist) {
-            foreach ($highlightExist as $highlight) {
-                $this->highlightModel->updateUpdatedFieldByHighlightId($highlight['id']);
-            }
-            throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST, "Highlight added before!");
-        }
-
-        if (isset($params['is_encrypted']) && $params['is_encrypted'] === 'Yes') {
-            $params['is_encrypted'] = 1;
-            $params['highlight'] = EncryptionUtil::encrypt($params['highlight']);
-        } else {
-            $doIndex = true;
-            $params['is_encrypted'] = 0;
-        }
-
-        if (isset($params['is_secret']) && $params['is_secret'] === 'Public') {
-            $params['is_secret'] = 0;
-        } else {
-            $params['is_secret'] = 1;
-        }
-
-        $params['updated'] = $now;
-        $params['created'] = $now;
-
-        $params['book_id'] = $params['book'] ? $this->bookModel->getBookIdByUid($params['book']) : null;
-
-        $highlightId = $this->highlightModel->create($params);
-
-        $this->tagModel->updateSourceTags($params['tags'], $highlightId, Sources::HIGHLIGHT->value);
-
-        if ($doIndex) {
-            $typesenseClient = new Typesense('highlights');
-            $document = [
-                'id' => (string)$highlightId,
-                'highlight' => $params['highlight'],
-                'is_deleted' => 0,
-                'author' => $params['author'] ?: $_SESSION['userInfos']['username'],
-                'source' => $params['source'] ?: '',
-                'created' => (int)$now,
-                'updated' => (int)$now,
-                'is_encrypted' => 0,
-                'is_secret' => (int)$params['is_secret'],
-                'blog_path' => $params['blogPath'] ?? '',
-                'user_id' => (int)$_SESSION['userInfos']['user_id'],
-            ];
-            $typesenseClient->indexDocument($document);
-        }
-
-        $_SESSION['badgeCounts']['highlightsCount'] += 1;
+        $this->highlightModel->createOperations($params);
 
         $resource = [
             "message" => lang\En::SUCCESS
         ];
 
-        unset($_SESSION['highlights']['minMaxID']);
         return $this->response(StatusCode::HTTP_OK, $resource);
     }
 

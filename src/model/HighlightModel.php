@@ -3,6 +3,8 @@
 namespace App\model;
 
 use App\enum\Sources;
+use App\util\lang;
+use App\util\ArrayUtil;
 use App\util\EncryptionUtil;
 use App\util\markdown\Markdown;
 use App\util\Typesense;
@@ -309,6 +311,152 @@ class HighlightModel
         return $data;
     }
 
+    public function updateOperations($highlightID, $params) {
+        $params = ArrayUtil::trimArrayElements($params);
+        $highlightDetails = $this->getHighlightByID($highlightID);
+        $doIndex = false;
+
+        if (isset($_SESSION['highlights']['not_editable'][$highlightID])) {
+            throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST, lang\En::HIGHLIGHT_NOT_EDITABLE);
+        }
+
+        if (!$highlightDetails) {
+            throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST, lang\En::HIGHLIGHT_NOT_FOUND);
+        }
+
+        if (!isset($params['highlight']) || !$params['highlight']) {
+            throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST, lang\En::HIGHLIGHT_CANNOT_BE_NULL);
+        }
+
+        if (isset($params['is_encrypted']) && $params['is_encrypted'] === 'Yes') {
+            $params['is_encrypted'] = 1;
+            $params['highlight'] = EncryptionUtil::encrypt($params['highlight']);
+        } else {
+            $doIndex = true;
+            $params['is_encrypted'] = 0;
+        }
+
+        $params['updated'] = time();
+        $params['book_id'] = null;
+
+        if (isset($params['book']) && $params['book'] !== 'null') {
+            $params['book_id'] = $this->bookModel->getBookIdByUid($params['book']);
+        }
+
+        $this->tagModel->deleteTagsBySourceId($highlightID, Sources::HIGHLIGHT->value);
+        $this->tagModel->updateSourceTags($params['tags'], $highlightID, Sources::HIGHLIGHT->value);
+        $this->update($highlightID, $params);
+
+        if ($highlightDetails['highlight'] !== $params['highlight']) {
+            $this->addChangeLog($highlightID, $highlightDetails['highlight']);
+
+            if ($doIndex) {
+                $typesenseClient = new Typesense('highlights');
+
+                $searchParameters = [
+                    'q' => '*',
+                    // Query string; using '*' for a match-all search
+                    'filter_by' => "id:=$highlightID && user_id:={$_SESSION['userInfos']['user_id']}",
+                    // Use the id field in filter_by
+                    'fields' => 'id,user_id'
+                    // Specify the fields to include in the results
+                ];
+                $typesenseSearchResult = $typesenseClient->searchDocuments($searchParameters);
+
+                if ($typesenseSearchResult['found']) {
+                    $document = [
+                        'highlight' => $params['highlight'],
+                        'is_deleted' => 0,
+                        'user_id' => (int)$_SESSION['userInfos']['user_id'],
+                        'author' => $params['author'] ?: $_SESSION['userInfos']['username'],
+                        'source' => $params['source'] ?: '',
+                        'created' => (int)$highlightDetails['created'],
+                        'updated' => (int)$params['updated'],
+                        'is_encrypted' => 0,
+                        'is_secret' => (int)$params['is_secret'],
+                        'blog_path' => $params['blogPath'] ?? '',
+                    ];
+                    $typesenseClient->updateDocument((string)$highlightID, $document);
+                }
+
+            }
+        }
+    }
+
+    public function createOperations($params) {
+        $params = ArrayUtil::trimArrayElements($params);
+        $doIndex = false;
+        $now = time();
+
+        if (!isset($params['highlight']) || !$params['highlight']) {
+            throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST, lang\En::HIGHLIGHT_CANNOT_BE_NULL);
+        }
+
+        if (str_word_count($params['highlight']) < 2) {
+            throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST, lang\En::HIGHLIGHT_MUST_BE_LONGER);
+        }
+
+        // OLD WAY
+        $highlightExist = $this->searchHighlight($params['highlight']);
+
+        if ($highlightExist) {
+            foreach ($highlightExist as $highlight) {
+                $this->updateUpdatedFieldByHighlightId($highlight['id']);
+            }
+            throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST, "Highlight added before!");
+        }
+
+        if (isset($params['is_encrypted']) && $params['is_encrypted'] === 'Yes') {
+            $params['is_encrypted'] = 1;
+            $params['highlight'] = EncryptionUtil::encrypt($params['highlight']);
+        } else {
+            $doIndex = true;
+            $params['is_encrypted'] = 0;
+        }
+
+        if (isset($params['is_secret']) && $params['is_secret'] === 'Public') {
+            $params['is_secret'] = 0;
+        } else {
+            $params['is_secret'] = 1;
+        }
+
+        if (!isset($params['type'])) {
+            $params['type'] = 0;
+        }
+
+        $params['updated'] = $now;
+        $params['created'] = $now;
+
+        $params['book_id'] = $params['book'] ? $this->bookModel->getBookIdByUid($params['book']) : null;
+
+        $highlightId = $this->create($params);
+
+        $this->tagModel->updateSourceTags($params['tags'], $highlightId, Sources::HIGHLIGHT->value);
+
+        if ($doIndex) {
+            $typesenseClient = new Typesense('highlights');
+            $document = [
+                'id' => (string)$highlightId,
+                'highlight' => $params['highlight'],
+                'is_deleted' => 0,
+                'author' => $params['author'] ?: $_SESSION['userInfos']['username'],
+                'source' => $params['source'] ?: '',
+                'created' => (int)$now,
+                'updated' => (int)$now,
+                'is_encrypted' => 0,
+                'is_secret' => (int)$params['is_secret'],
+                'blog_path' => $params['blogPath'] ?? '',
+                'user_id' => (int)$_SESSION['userInfos']['user_id'],
+            ];
+            $typesenseClient->indexDocument($document);
+        }
+
+        $_SESSION['badgeCounts']['highlightsCount'] += 1;
+
+        unset($_SESSION['highlights']['minMaxID']);
+
+        return $highlightId;
+    }
     public function create($params)
     {
         $params['author'] = $params['author'] ?: $_SESSION['userInfos']['username'];
@@ -325,8 +473,8 @@ class HighlightModel
             unset($params['title']);
         }
 
-        $sql = 'INSERT INTO highlights (title, highlight, author, source, page, link, blog_path, book_id, is_encrypted, is_secret, created, updated, user_id)
-                VALUES(:title, :highlight, :author, :source, :page, :link, :blog_path, :book_id, :is_encrypted, :is_secret, :created, :updated, :user_id)';
+        $sql = 'INSERT INTO highlights (title, highlight, author, source, page, link, blog_path, type, book_id, is_encrypted, is_secret, created, updated, user_id)
+                VALUES(:title, :highlight, :author, :source, :page, :link, :blog_path, :type, :book_id, :is_encrypted, :is_secret, :created, :updated, :user_id)';
 
         $stm = $this->dbConnection->prepare($sql);
         $stm->bindParam(':title', $params['title'], \PDO::PARAM_STR);
@@ -336,6 +484,7 @@ class HighlightModel
         $stm->bindParam(':page', $params['page'], \PDO::PARAM_INT);
         $stm->bindParam(':link', $params['bookmark_id'], \PDO::PARAM_INT);
         $stm->bindParam(':blog_path', $params['blogPath'], \PDO::PARAM_STR);
+        $stm->bindParam(':type', $params['type'], \PDO::PARAM_INT);
         $stm->bindParam(':book_id', $params['book_id'], \PDO::PARAM_INT);
         $stm->bindParam(':is_encrypted', $params['is_encrypted'], \PDO::PARAM_INT);
         $stm->bindParam(':is_secret', $params['is_secret'], \PDO::PARAM_INT);

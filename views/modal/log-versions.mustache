@@ -5,7 +5,7 @@
         <script id="template-log-versions" type="text/html">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h1 class="modal-title" id="exampleModalLabel">{{date}}</h1>
+                    <h1 class="modal-title" id="exampleModalLabel">Log Versions</h1>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -36,9 +36,9 @@
 
         $(".btnLogVersions").on('click', function (e) {
 
-            var date = $(this).data('date');
+            var highlightId = $(this).data('highlight-id');
 
-            var result = ajaxCall('GET', '/logs/' + date + '/versions', null, false, false)
+            var result = ajaxCall('GET', '/highlights/' + highlightId + '/versions', null, false, false)
 
             if (result !== false) {
                 var template = $('#template-log-versions').html();

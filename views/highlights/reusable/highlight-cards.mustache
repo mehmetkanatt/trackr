@@ -23,7 +23,7 @@
 
         </div>
 
-        <div class="card-body clamp">
+        <div class="card-body {{expandableClass}}">
 
             {{{highlight}}}
 
@@ -46,15 +46,17 @@
             </footer>
         </div>
 
-        {{#tags}}
-        <div class="card-footer small">
-                <strong>{{{imploded_link_blank}}}</strong>
-        </div>
-        {{/tags}}
 
-        {{#expandable}}
-            <a href="javascript:void(0)" class="btn btn-link p-0 toggleCard float-left">Show more</a>
-        {{/expandable}}
+        <div class="card-footer small">
+            {{#expandable}}
+                <a href="javascript:void(0)" class="btn btn-link p-0 toggleCard">Show more</a>
+                <br>
+            {{/expandable}}
+            {{#tags}}
+                <strong>{{{imploded_link_blank}}}</strong>
+            {{/tags}}
+        </div>
+
     </div>
     <br class="highlightCardBR">
 {{/highlights}}

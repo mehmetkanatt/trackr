@@ -168,9 +168,12 @@ class HighlightModel
         $highlight['ultimate_source'] = $source;
 
         $highlight['expandable'] = false;
+        $highlight['expandableClass'] = '';
 
-        if (strlen($highlight['highlight']) > 50) {
+        $lineCount = substr_count($highlight['highlight'], "\n") + 1;
+        if ($lineCount > 2) {
             $highlight['expandable'] = true;
+            $highlight['expandableClass'] = 'clamp';
         }
 
         $highlight['highlight'] = $markdownClient->convert($highlight['highlight']);

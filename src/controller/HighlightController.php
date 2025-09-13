@@ -63,8 +63,9 @@ class HighlightController extends Controller
                 $data['pageTitle'] = "Highlights #{$queryString['id']} | trackr";
             }
 
-            $highlights = $this->highlightModel->getHighlightsByGivenField('id', $queryString['id'],
-                $_ENV['HIGHLIGHT_LIMIT']);
+            $highlights = $this->highlightModel->getHighlightsByGivenField('id', $queryString['id'], $_ENV['HIGHLIGHT_LIMIT']);
+            $highlights[0]['expandable'] = false;
+            $highlights[0]['expandableClass'] = '';
         } elseif (isset($queryString['bookUID'])) {
             $book = $this->bookModel->getBookByGivenColumn('uid', $queryString['bookUID']);
             $bookId = $book['id'];

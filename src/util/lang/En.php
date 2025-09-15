@@ -15,6 +15,19 @@ class En
     const HIGHLIGHT_PARENT_NOT_FOUND = 'Parent highlight not found!';
     const HIGHLIGHT_DELETED_SUCCESSFULLY = 'Highlight deleted successfully!';
 
+    const BOARD_NOT_FOUND = 'Board not found!';
+    const BOARD_SUCCESSFULLY_CREATED = 'Board created successfully!';
+    const BOARD_TITLE_CANNOT_BE_NULL = 'Board title cannot be null!';
+
+    const TASK_TITLE_CANNOT_BE_NULL = 'Task title cannot be null!';
+    const TASK_SUCCESSFULLY_CREATED = 'Task created successfully!';
+    const TASK_NOT_FOUND = 'Task not found!';
+    const TASK_STATUS_INVALID = 'Task status invalid!';
+    const TASK_STATUS_CANNOT_BE_NULL = 'Task status cannot be null!';
+    const TASK_NEW_STATUS_CANNOT_BE_NULL = "Task's new status cannot be null!";
+    const TASK_STATUS_SUCCESSFULLY_UPDATED = 'Task status successfully updated!';
+
+
     const BOOKMARK_INCONSISTENCY_FOR_ADDING_HIGHLIGHT = "Inconsistency! You're trying to add highlight for different bookmark!";
 
     const AUTH_LOGGED_IN_SUCCESSFULLY = 'Logged in successfully!';

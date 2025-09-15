@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+    {{> head }}
+
+    <style>
+        .kanban-column {
+            min-height: 200px;
+            background-color: #2b2b2b;
+            border: 1px dashed #444;
+            padding: 10px;
+            transition: background-color 0.2s ease;
+        }
+
+        .kanban-column.drag-over {
+            background-color: #3a3a3a;
+            border-color: #666;
+        }
+
+        .kanban-item {
+            cursor: grab;
+            border: 1px solid #555;
+            /*background-color: #3d3d3d !important;*/
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+
+        .kanban-item.dragging {
+            opacity: 0.5;
+            transform: scale(0.97);
+        }
+
+
+        /*test*/
+        .kanban-task-title {
+            font-size: 1rem;
+        }
+
+        .kanban-task-tags .badge {
+            background-color: #17a2b8; /* Bootstrap info color works nicely on dark */
+        }
+
+    </style>
+</head>
+<body class="vertical dark">
+<div class="wrapper">
+    {{> include}}
+    <nav class="topnav navbar navbar-light">
+        {{> navbar }}
+    </nav>
+    <main role="main" class="main-content">
+        <div class="container-fluid">
+            <div class="row justify-content-center">
+                <div class="col-12">
+
+                    <h2 class="page-title">{{boardName}} Board</h2>
+                    <p class="text-muted mb-4">{{boardName}} description</p>
+
+                    <div class="card mb-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Create a new task</h5>
+                                <div class="form-group">
+                                    <input type="text" id="title" placeholder="Type a name for the task"
+                                           class="form-control">
+                                </div>
+
+                                <div class="form-group">
+                                    <select id="eisenhowerStatus" class="form-control">
+                                        <option disabled selected>Priority</option>
+                                        <option value="3">Urgent & Important (Do)</option>
+                                        <option value="2">Not Urgent & Important (Schedule)</option>
+                                        <option value="1">Urgent & Not Important (Delegate)</option>
+                                        <option value="0">Not Urgent & Not Important (Eliminate)</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <button id="btnCreateNewTask" class="btn btn-primary mb-2">Create</button>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="row">
+
+                        {{#columns}}
+                            <div class="col-md-3">
+                                <div class="card bg-dark text-white">
+                                    <div class="card-header border-bottom">{{statusName}}</div>
+                                    <div class="card-body kanban-column" data-status="{{statusValue}}" id="{{columnDivId}}">
+
+                                        {{#tasks}}
+                                            <div class="kanban-item card mb-2 p-2 text-white {{eisenhowerStatusColor}}" draggable="true" data-uid="{{uid}}">
+                                                <div class="kanban-task-title fw-bold">{{#existBody}}<span class="fe fe-18 fe-file"></span>{{/existBody}} {{title}}</div>
+                                                <div class="small taskRelativeUpdatedAt">
+                                                    Updated at: {{relativeUpdatedAt}}
+                                                </div>
+                                                <div class="kanban-task-tags small">
+                                                    <span class="badge bg-info me-1">#{{eisenhowerStatusName}}</span>
+                                                </div>
+                                            </div>
+                                        {{/tasks}}
+                                    </div>
+                                </div>
+                            </div>
+                        {{/columns}}
+
+                    </div>
+
+                </div> <!-- .col-12 -->
+            </div> <!-- .row -->
+        </div> <!-- .container-fluid -->
+    </main> <!-- main -->
+</div> <!-- .wrapper -->
+
+{{> menu }}
+
+<script>
+    $(document).ready(function () {
+
+        const items = document.querySelectorAll('.kanban-item');
+        const columns = document.querySelectorAll('.kanban-column');
+
+        items.forEach(item => {
+            item.addEventListener('dragstart', e => {
+                e.dataTransfer.setData('text/plain', e.target.innerText);
+                e.target.classList.add('dragging');
+                setTimeout(() => e.target.style.display = 'none', 0);
+            });
+
+            item.addEventListener('dragend', e => {
+                e.target.style.display = 'block';
+                e.target.classList.remove('dragging');
+            });
+        });
+
+        columns.forEach(column => {
+            column.addEventListener('dragover', e => {
+                e.preventDefault();
+                column.classList.add('drag-over');
+            });
+
+            column.addEventListener('dragleave', () => {
+                column.classList.remove('drag-over');
+            });
+
+            column.addEventListener('drop', e => {
+                e.preventDefault();
+                column.classList.remove('drag-over');
+
+                const draggedItem = document.querySelector('.dragging');
+                const oldColumn = draggedItem.closest('.kanban-column'); // where it came from before drop
+
+                column.prepend(draggedItem)
+
+                var taskUID = $(draggedItem).data('uid');
+                var oldStatus = oldColumn ? oldColumn.dataset.status : null;
+                var newStatus = column.dataset.status;
+
+                var data = {
+                    from: oldStatus,
+                    to: newStatus
+                };
+                var result = ajaxCall('PATCH', "/boards/{{boardUID}}/tasks/" + taskUID + "/status", data);
+
+                if (result !== false) {
+                    $(draggedItem).find('.taskRelativeUpdatedAt').text('Updated at: now');
+                } else {
+                    console.log(result)
+                    oldColumn.prepend(draggedItem);
+                }
+
+            });
+        });
+
+        function addTask(columnSelector, taskText, taskId) {
+            const newTask = $(`
+    <div class="kanban-item card mb-2 p-2 bg-secondary text-white"
+         draggable="true"
+         data-id="${taskId}">
+      ${taskText}
+    </div>
+  `);
+
+            // Append to column
+            $(columnSelector).prepend(newTask);
+
+            // Re-attach drag events so the new task is draggable
+            attachDragEvents(newTask[0]);
+        }
+
+// Function to re-attach drag listeners for new tasks
+        function attachDragEvents(item) {
+            item.addEventListener('dragstart', e => {
+                e.dataTransfer.setData('text/plain', e.target.innerText);
+                e.target.classList.add('dragging');
+                setTimeout(() => e.target.style.display = 'none', 0);
+            });
+
+            item.addEventListener('dragend', e => {
+                e.target.style.display = 'block';
+                e.target.classList.remove('dragging');
+            });
+        }
+
+        $("#btnCreateNewTask").on('click', function (e) {
+
+            var title = $('#title').val();
+            var eisenhowerStatus = $('#eisenhowerStatus').val();
+
+            if (title.trim() === '') {
+                $.bootstrapPurr('Task title cannot be null', {
+                    type: 'danger'
+                });
+                return;
+            }
+
+            var data = {
+                title: title,
+                eisenhowerStatus: eisenhowerStatus
+            };
+            var result = ajaxCall('POST', "/boards/{{boardUID}}", data);
+
+            if (result !== false) {
+                addTask('#backlog-column', title, result.taskUid);
+            }
+
+        });
+
+        $(".kanban-item").on('click', function (e) {
+
+            var taskUID = $(this).data('uid');
+            console.log("Clicked on task with UID: " + taskUID);
+
+        });
+
+    });
+</script>
+</body>
+</html>

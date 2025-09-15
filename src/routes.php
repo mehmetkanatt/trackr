@@ -4,6 +4,7 @@ use App\middleware;
 use App\controller\AuthController;
 use App\controller\HomeController;
 use App\controller\BookController;
+use App\controller\BoardController;
 use App\controller\BookmarkController;
 use App\controller\ApiController;
 use App\controller\DateTrackingController;
@@ -33,6 +34,12 @@ $app->group('', function () {
 
     $this->get('/logs', LogController::class . ':index');
     $this->post('/logs', LogController::class . ':save');
+
+    $this->get('/boards', BoardController::class . ':index');
+    $this->post('/boards', BoardController::class . ':createBoard');
+    $this->get('/boards/{boardUID}', BoardController::class . ':tasks');
+    $this->post('/boards/{boardUID}', BoardController::class . ':createTask');
+    $this->patch('/boards/{boardUID}/tasks/{taskUID}/status', BoardController::class . ':changeTaskStatus');
 
     $this->get('/menu-badge-counts', HomeController::class . ':getMenuBadgeCounts');
     $this->get('/navbar-infos', HomeController::class . ':getNavbarInfos');

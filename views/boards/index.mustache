@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+    {{> head }}
+</head>
+<body class="vertical dark">
+<div class="wrapper">
+    {{> include}}
+    <nav class="topnav navbar navbar-light">
+        {{> navbar }}
+    </nav>
+    <main role="main" class="main-content">
+        <div class="container-fluid">
+            <div class="row justify-content-center">
+                <div class="col-12">
+
+                    <h2 class="page-title">Boards</h2>
+                    <p class="text-muted mb-4">Boards description - manage your tasks by Eisenhower Matrix</p>
+
+                    <div class="card mb-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Create a new board</h5>
+                                <div class="form-group">
+                                    <input type="text" id="title" placeholder="Type a name for the board"
+                                           class="form-control">
+                                </div>
+
+                                <div class="form-group">
+                                    <button id="btnCreateNewBoard" class="btn btn-primary mb-2">Create</button>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-columns">
+                        {{#boards}}
+                            <div class="card">
+                                <div class="card-header bg-dark">
+                                    {{title}}
+                                </div>
+                                <div class="card-body">
+                                    Task count: backlog, todo, in progress, done, canceled
+                                </div>
+                                <div class="card-footer">
+                                    <a href="/boards/{{uid}}" class="btn btn-primary btn-sm">Go to board</a>
+                                </div>
+                            </div>
+                        {{/boards}}
+                    </div>
+
+                </div> <!-- .col-12 -->
+            </div> <!-- .row -->
+        </div> <!-- .container-fluid -->
+    </main> <!-- main -->
+</div> <!-- .wrapper -->
+
+{{> menu }}
+
+<script>
+    $(document).ready(function () {
+
+        $("#btnCreateNewBoard").on('click', function (e) {
+
+            var title = $('#title').val();
+            var result = ajaxCall('POST', "/boards", "title=" + title)
+
+            if (result !== false) {
+                location.reload();
+            }
+
+        });
+
+    });
+</script>
+</body>
+</html>

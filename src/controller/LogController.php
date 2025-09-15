@@ -56,9 +56,7 @@ class LogController extends Controller
 
         $todayLog = $this->logModel->getLog($today);
 
-        if ($todayLog) {
-            $_SESSION['logs']['todays_log'] = $todayLog['log'];
-        } else {
+        if (!$todayLog) {
             $this->logModel->insert($today);
         }
 
@@ -150,8 +148,6 @@ class LogController extends Controller
             $highlightId = $this->highlightModel->createOperations($highlightParams);
             $this->logModel->insert($today, $highlightId);
         }
-
-        $_SESSION['logs']['todays_log'] = $todaysLog['log'];
 
         $resource['message'] = "Saved successfully";
         $resource['responseCode'] = StatusCode::HTTP_OK;

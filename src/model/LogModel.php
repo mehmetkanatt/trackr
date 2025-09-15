@@ -24,9 +24,9 @@ class LogModel
         $markdownClient = new Markdown();
         $logs = [];
 
-        $sql = 'SELECT l.id, l.date, l.highlight_id, l.user_id, h.highlight AS log
+        $sql = 'SELECT l.id, l.date, l.log_hid, l.user_id, h.highlight AS log
                 FROM logs l
-                INNER JOIN highlights h ON l.highlight_id = h.id
+                INNER JOIN highlights h ON l.log_hid = h.id
                 WHERE l.user_id = :user_id ORDER BY l.id DESC LIMIT :limit';
 
         $stm = $this->dbConnection->prepare($sql);
@@ -40,7 +40,7 @@ class LogModel
 
         while ($row = $stm->fetch(\PDO::FETCH_ASSOC)) {
             $row['log'] = $markdownClient->convert($row['log']);
-            $row['versionCount'] = $this->highlightModel->getVersionsCountById($row['highlight_id']);
+            $row['versionCount'] = $this->highlightModel->getVersionsCountById($row['log_hid']);
             $logs[] = $row;
         }
 
@@ -51,9 +51,9 @@ class LogModel
     {
         $log = [];
 
-        $sql = 'SELECT l.id, l.date, l.highlight_id, l.user_id, h.highlight AS log
+        $sql = 'SELECT l.id, l.date, l.log_hid, l.user_id, h.highlight AS log
                 FROM logs l
-                INNER JOIN highlights h ON l.highlight_id = h.id
+                INNER JOIN highlights h ON l.log_hid = h.id
                 WHERE l.date = :date AND l.user_id = :user_id ORDER BY l.id DESC LIMIT 1';
 
         $stm = $this->dbConnection->prepare($sql);
@@ -72,15 +72,15 @@ class LogModel
         return $log;
     }
 
-    public function insert($date, $highlightId = null)
+    public function insert($date, $logHid = null)
     {
-        $sql = 'INSERT INTO logs (date, highlight_id, user_id)
-                VALUES (:date, :highlight_id, :user_id)';
+        $sql = 'INSERT INTO logs (date, log_hid, user_id)
+                VALUES (:date, :log_hid, :user_id)';
 
         $stm = $this->dbConnection->prepare($sql);
 
         $stm->bindParam(':date', $date, \PDO::PARAM_STR);
-        $stm->bindParam(':highlight_id', $highlightId, \PDO::PARAM_INT);
+        $stm->bindParam(':log_hid', $logHid, \PDO::PARAM_INT);
         $stm->bindParam(':user_id', $_SESSION['userInfos']['user_id'], \PDO::PARAM_INT);
 
         if (!$stm->execute()) {
@@ -90,37 +90,17 @@ class LogModel
         return $this->dbConnection->lastInsertId();
     }
 
-    public function update($date, $highlightId)
+    public function update($date, $logHid)
     {
         $sql = 'UPDATE logs
-                SET highlight_id = :highlight_id
+                SET log_hid = :log_hid
                 WHERE user_id = :user_id AND date = :date';
 
         $stm = $this->dbConnection->prepare($sql);
 
         $stm->bindParam(':date', $date, \PDO::PARAM_STR);
-        $stm->bindParam(':highlight_id', $highlightId, \PDO::PARAM_INT);
+        $stm->bindParam(':log_hid', $logHid, \PDO::PARAM_INT);
         $stm->bindParam(':user_id', $_SESSION['userInfos']['user_id'], \PDO::PARAM_INT);
-
-        if (!$stm->execute()) {
-            throw CustomException::dbError(StatusCode::HTTP_SERVICE_UNAVAILABLE, json_encode($stm->errorInfo()));
-        }
-
-        return true;
-    }
-
-    public function saveOldVersion($logId, $oldLog)
-    {
-        $now = time();
-
-        $sql = 'INSERT INTO log_versions (log_id, old, created_at) 
-                VALUES (:log_id, :old_log, :created_at)';
-
-        $stm = $this->dbConnection->prepare($sql);
-
-        $stm->bindParam(':log_id', $logId, \PDO::PARAM_INT);
-        $stm->bindParam(':old_log', $oldLog, \PDO::PARAM_STR);
-        $stm->bindParam(':created_at', $now, \PDO::PARAM_INT);
 
         if (!$stm->execute()) {
             throw CustomException::dbError(StatusCode::HTTP_SERVICE_UNAVAILABLE, json_encode($stm->errorInfo()));

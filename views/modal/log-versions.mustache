@@ -36,9 +36,9 @@
 
         $(".btnLogVersions").on('click', function (e) {
 
-            var highlightId = $(this).data('highlight-id');
+            var logHId = $(this).data('log-hid');
 
-            var result = ajaxCall('GET', '/highlights/' + highlightId + '/versions', null, false, false)
+            var result = ajaxCall('GET', '/highlights/' + logHId + '/versions', null, false, false)
 
             if (result !== false) {
                 var template = $('#template-log-versions').html();

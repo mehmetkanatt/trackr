@@ -133,12 +133,6 @@ class BookmarkController extends Controller
             'user_id' => $_SESSION['userInfos']['user_id']
         ]);
 
-        if (!$_ENV['DISABLE_ASK_CHATGPT']) {
-            $rabbitmq->publishJob(JobTypes::GET_KEYWORD_ABOUT_BOOKMARK, [
-                'id' => $bookmarkID
-            ]);
-        }
-
         $this->bookmarkModel->addOwnership($bookmarkID, $_SESSION['userInfos']['user_id'], $params['note']);
         $_SESSION['badgeCounts']['bookmarkCount'] += 1;
 

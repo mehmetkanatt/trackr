@@ -4,6 +4,7 @@ namespace App\model;
 
 use App\enum\EisenhowerStatus;
 use App\enum\EisenhowerStatusColor;
+use App\enum\Sources;
 use App\enum\TaskStatus;
 use App\util\TimeUtil;
 use App\util\UID;
@@ -15,10 +16,12 @@ class TaskModel
 {
     /** @var \PDO $dbConnection */
     private $dbConnection;
+    private $tagModel;
 
     public function __construct(ContainerInterface $container)
     {
         $this->dbConnection = $container->get('db');
+        $this->tagModel = new TagModel($container);
     }
 
     public function getTaskByUid($uid)
@@ -33,6 +36,31 @@ class TaskModel
 
         $stm->bindParam(':user_id', $_SESSION['userInfos']['user_id'], \PDO::PARAM_INT);
         $stm->bindParam(':uid', $uid, \PDO::PARAM_STR);
+
+        if (!$stm->execute()) {
+            throw CustomException::dbError(StatusCode::HTTP_SERVICE_UNAVAILABLE, json_encode($stm->errorInfo()));
+        }
+
+        while ($row = $stm->fetch(\PDO::FETCH_ASSOC)) {
+            $task = $row;
+        }
+
+        return $task;
+    }
+
+    public function getTaskByTaskUidAndBoardId($taskUid, $boardId)
+    {
+        $task = [];
+
+        $sql = 'SELECT *
+                FROM tasks 
+                WHERE uid = :uid AND board_id = :board_id AND user_id = :user_id';
+
+        $stm = $this->dbConnection->prepare($sql);
+
+        $stm->bindParam(':user_id', $_SESSION['userInfos']['user_id'], \PDO::PARAM_INT);
+        $stm->bindParam(':uid', $taskUid, \PDO::PARAM_STR);
+        $stm->bindParam(':board_id', $boardId, \PDO::PARAM_INT);
 
         if (!$stm->execute()) {
             throw CustomException::dbError(StatusCode::HTTP_SERVICE_UNAVAILABLE, json_encode($stm->errorInfo()));
@@ -90,7 +118,7 @@ class TaskModel
 
         foreach (TaskStatus::cases() as $status) {
             $tasks[$status->value]['tasks'] = [];
-            $tasks[$status->value]['statusName'] = ucfirst(strtolower($status->name));
+            $tasks[$status->value]['statusName'] = $status->capitalizedStatusName();
             $tasks[$status->value]['statusValue'] = $status->value;
             $tasks[$status->value]['columnDivId'] = strtolower($status->name) . '-column';
         }
@@ -98,50 +126,18 @@ class TaskModel
         while ($row = $stm->fetch(\PDO::FETCH_ASSOC)) {
 
             $row['relativeUpdatedAt'] = TimeUtil::relativeTime($row['updated_at']);
-            $row['existBody'] = !empty($row['description_hid']);
 
-            switch ($row['eisenhower_status']) {
-                case EisenhowerStatus::DO->value:
-                    $row['eisenhowerStatusColor'] = EisenhowerStatusColor::DO->value;
-                    $row['eisenhowerStatusName'] = 'Do';
-                    break;
-                case EisenhowerStatus::SCHEDULE->value:
-                    $row['eisenhowerStatusColor'] = EisenhowerStatusColor::SCHEDULE->value;
-                    $row['eisenhowerStatusName'] = 'Schedule';
-                    break;
-                case EisenhowerStatus::DELEGATE->value:
-                    $row['eisenhowerStatusColor'] = EisenhowerStatusColor::DELEGATE->value;
-                    $row['eisenhowerStatusName'] = 'Delegate';
-                    break;
-                case EisenhowerStatus::ELIMINATE->value:
-                    $row['eisenhowerStatusColor'] = EisenhowerStatusColor::ELIMINATE->value;
-                    $row['eisenhowerStatusName'] = 'Eliminate';
-                    break;
-                default:
-                    error_log("Unknown eisenhower status: " . $row['eisenhower_status']);
+            if ($row['body_hid']) {
+                $row['existBody'] = true;
+                $tags = $this->tagModel->getTagsBySourceId($row['body_hid'], Sources::HIGHLIGHT->value);
+                $row['tags'] = $tags['raw_tags'];
             }
 
-            switch ($row['status']) {
-                case TaskStatus::BACKLOG->value:
-                    echo "Backlog task found: " . $row['title'] . "\n";
-                    $tasks[TaskStatus::BACKLOG->value]['tasks'][] = $row;
-                    break;
-                case TaskStatus::TODO->value:
-                    $tasks[TaskStatus::TODO->value]['tasks'][] = $row;
-                    break;
-                case TaskStatus::INPROGRESS->value:
-                    $tasks[TaskStatus::INPROGRESS->value]['tasks'][] = $row;
-                    break;
-                case TaskStatus::DONE->value:
-                    $tasks[TaskStatus::DONE->value]['tasks'][] = $row;
-                    break;
-                case TaskStatus::CANCELED->value:
-                    $tasks[TaskStatus::CANCELED->value]['tasks'][] = $row;
-                    break;
-                default:
-                    echo "Unknown task status: " . $row['status'] . "\n";
-                    error_log("Unknown task status: " . $row['status']);
-            }
+            $eisenhowerStatusName = EisenhowerStatus::from($row['eisenhower_status'])->name; // get case name from value
+            $row['eisenhowerStatusColor'] = EisenhowerStatusColor::valueFromName($eisenhowerStatusName);
+            $row['eisenhowerStatusName'] = EisenhowerStatus::from($row['eisenhower_status'])->capitalizedStatusName();
+
+            $tasks[$row['status']]['tasks'][] = $row;
 
         }
 
@@ -151,20 +147,20 @@ class TaskModel
         return $tasks;
     }
 
-    public function createTask($title, $boardId, $descriptionHid = null, $eisenhowerStatus = 0, $priority = 0, $status = 0)
+    public function createTask($title, $boardId, $bodyHid = null, $eisenhowerStatus = 0, $priority = 0, $status = 0)
     {
         $uid = UID::generate();
         $now = date('Y-m-d H:i:s');
         $title = trim($title);
 
-        $sql = 'INSERT INTO tasks (uid, title, board_id, description_hid, eisenhower_status, status, user_id, created_at, updated_at)
-                VALUES (:uid, :title, :board_id, :description_hid, :eisenhower_status, :status, :user_id, :created_at, :updated_at)';
+        $sql = 'INSERT INTO tasks (uid, title, board_id, body_hid, eisenhower_status, status, user_id, created_at, updated_at)
+                VALUES (:uid, :title, :board_id, :body_hid, :eisenhower_status, :status, :user_id, :created_at, :updated_at)';
 
         $stm = $this->dbConnection->prepare($sql);
         $stm->bindParam(':uid', $uid, \PDO::PARAM_STR);
         $stm->bindParam(':title', $title, \PDO::PARAM_STR);
         $stm->bindParam(':board_id', $boardId, \PDO::PARAM_INT);
-        $stm->bindParam(':description_hid', $descriptionHid, \PDO::PARAM_STR);
+        $stm->bindParam(':body_hid', $bodyHid, \PDO::PARAM_STR);
         $stm->bindParam(':eisenhower_status', $eisenhowerStatus, \PDO::PARAM_INT);
         $stm->bindParam(':status', $status, \PDO::PARAM_INT);
         $stm->bindParam(':created_at', $now, \PDO::PARAM_STR);
@@ -180,8 +176,8 @@ class TaskModel
             'uid' => $uid,
             'title' => $title,
             'board_id' => $boardId,
-            'description_hid' => $descriptionHid,
-            'priority' => $priority,
+            'body_hid' => $bodyHid,
+            'eisenhower_status' => $eisenhowerStatus,
             'status' => $status,
             'user_id' => $_SESSION['userInfos']['user_id'],
             'created_at' => $now,
@@ -200,6 +196,28 @@ class TaskModel
         $stm = $this->dbConnection->prepare($sql);
 
         $stm->bindParam(':status', $newStatus, \PDO::PARAM_INT);
+        $stm->bindParam(':updated_at', $now, \PDO::PARAM_STR);
+        $stm->bindParam(':task_id', $taskId, \PDO::PARAM_INT);
+        $stm->bindParam(':user_id', $_SESSION['userInfos']['user_id'], \PDO::PARAM_INT);
+
+        if (!$stm->execute()) {
+            throw CustomException::dbError(StatusCode::HTTP_SERVICE_UNAVAILABLE, json_encode($stm->errorInfo()));
+        }
+
+        return true;
+    }
+
+    public function updateTaskBody($taskId, $bodyHid)
+    {
+        $now = date('Y-m-d H:i:s');
+
+        $sql = 'UPDATE tasks
+                SET body_hid = :body_hid, updated_at = :updated_at
+                WHERE id = :task_id AND user_id = :user_id';
+
+        $stm = $this->dbConnection->prepare($sql);
+
+        $stm->bindParam(':body_hid', $bodyHid, \PDO::PARAM_INT);
         $stm->bindParam(':updated_at', $now, \PDO::PARAM_STR);
         $stm->bindParam(':task_id', $taskId, \PDO::PARAM_INT);
         $stm->bindParam(':user_id', $_SESSION['userInfos']['user_id'], \PDO::PARAM_INT);

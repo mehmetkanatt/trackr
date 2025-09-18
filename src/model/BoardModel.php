@@ -60,20 +60,20 @@ class BoardModel
         return $boards;
     }
 
-    public function createBoard($title, $descriptionHid, $status = 0)
+    public function createBoard($title, $description, $status = 0)
     {
         // status: 0 = active, 1 = archived, 2 = deleted
         $uid = UID::generate();
         $now = date('Y-m-d H:i:s');
         $title = trim($title);
 
-        $sql = 'INSERT INTO boards (uid, title, description_hid, status, user_id, created_at, updated_at)
-                VALUES (:uid, :title, :description_hid, :status, :user_id, :created_at, :updated_at)';
+        $sql = 'INSERT INTO boards (uid, title, description, status, user_id, created_at, updated_at)
+                VALUES (:uid, :title, :description, :status, :user_id, :created_at, :updated_at)';
 
         $stm = $this->dbConnection->prepare($sql);
         $stm->bindParam(':uid', $uid, \PDO::PARAM_STR);
         $stm->bindParam(':title', $title, \PDO::PARAM_STR);
-        $stm->bindParam(':description_hid', $descriptionHid, \PDO::PARAM_INT);
+        $stm->bindParam(':description', $description, \PDO::PARAM_STR);
         $stm->bindParam(':status', $status, \PDO::PARAM_INT);
         $stm->bindParam(':created_at', $now, \PDO::PARAM_STR);
         $stm->bindParam(':updated_at', $now, \PDO::PARAM_STR);

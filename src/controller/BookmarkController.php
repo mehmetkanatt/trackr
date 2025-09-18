@@ -9,6 +9,7 @@ use App\exception\CustomException;
 use App\model\BookmarkModel;
 use App\model\HighlightModel;
 use App\model\TagModel;
+use App\model\ActivityModel;
 use App\util\ArrayUtil;
 use App\util\lang;
 use App\rabbitmq\AmqpJobPublisher;
@@ -25,6 +26,7 @@ class BookmarkController extends Controller
     private $bookmarkModel;
     private $tagModel;
     private $highlightModel;
+    private $activityModel;
 
     public function __construct(ContainerInterface $container)
     {
@@ -32,6 +34,7 @@ class BookmarkController extends Controller
         $this->bookmarkModel = new BookmarkModel($container);
         $this->tagModel = new TagModel($container);
         $this->highlightModel = new HighlightModel($container);
+        $this->activityModel = new ActivityModel($container);
     }
 
     public function index(ServerRequestInterface $request, ResponseInterface $response)
@@ -133,8 +136,10 @@ class BookmarkController extends Controller
             'user_id' => $_SESSION['userInfos']['user_id']
         ]);
 
-        $this->bookmarkModel->addOwnership($bookmarkID, $_SESSION['userInfos']['user_id'], $params['note']);
+        $ownershipId = $this->bookmarkModel->addOwnership($bookmarkID, $_SESSION['userInfos']['user_id'], $params['note']);
         $_SESSION['badgeCounts']['bookmarkCount'] += 1;
+
+        $this->activityModel->logCreateNewBookmark($bookmarkID);
 
         $resource = [
             "message" => "Successfully added bookmark",
@@ -291,23 +296,31 @@ class BookmarkController extends Controller
     {
         $params = $request->getParsedBody();
         $bookmarkUid = $args['uid'];
-        $bookmarkId = $this->bookmarkModel->getBookmarkIdByUid($bookmarkUid);
-        $status = (int)$params['status'];
+        $bookmark = $this->bookmarkModel->getBookmarkByUid($bookmarkUid);
+        $bookmarkId = $bookmark['id'];
+        $oldStatus = (int)$bookmark['status'];
+        $newStatus = (int)$params['status'];
 
-        if ($status === BookmarkStatus::STARTED->value) {
+        if ($oldStatus === $newStatus) {
+            throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST,'Old and new status cannot be the same!');
+        }
+
+        if ($newStatus === BookmarkStatus::STARTED->value) {
             $this->bookmarkModel->updateStartedDate($bookmarkId, time());
             $this->bookmarkModel->updateBookmarkStatus($bookmarkId, BookmarkStatus::STARTED->value);
-        } elseif ($status === BookmarkStatus::DONE->value) {
+        } elseif ($newStatus === BookmarkStatus::DONE->value) {
             $this->bookmarkModel->updateDoneDate($bookmarkId, time());
             $this->bookmarkModel->updateBookmarkStatus($bookmarkId, BookmarkStatus::DONE->value);
             $_SESSION['badgeCounts']['bookmarkCount'] -= 1;
-        } elseif ($status === BookmarkStatus::PRIORITIZED->value) {
+        } elseif ($newStatus === BookmarkStatus::PRIORITIZED->value) {
             $this->bookmarkModel->updateBookmarkStatus($bookmarkId, BookmarkStatus::PRIORITIZED->value);
         } else {
             return $this->response(StatusCode::HTTP_BAD_REQUEST, [
                 'message' => 'Status not found'
             ]);
         }
+
+        $this->activityModel->logBookmarkStatus($bookmarkId, $oldStatus, $newStatus);
 
         $resource = [
             "message" => "Success!"

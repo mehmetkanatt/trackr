@@ -123,6 +123,28 @@ class LogController extends Controller
         return $this->view->render($response, 'logs/index.mustache', $data);
     }
 
+    public function activities(ServerRequestInterface $request, ResponseInterface $response)
+    {
+        $queryParams = $request->getQueryParams();
+        $limit = 3; // default limit
+        if (isset($queryParams['limit'])) {
+            $limit = (int)htmlspecialchars($queryParams['limit']);
+
+            if (!$limit) {
+                $limit = 3;
+            }
+        }
+
+        $from = date('Y-m-d', strtotime("-$limit days"));
+        $activities = $this->activityModel->getActivitiesFilterByDate($from);
+
+        $data['activeActivities'] = 'active';
+        $data['pageTitle'] = "Activities | trackr";
+        $data['activities'] = $activities;
+
+        return $this->view->render($response, 'logs/activities.mustache', $data);
+    }
+
     public function save(ServerRequestInterface $request, ResponseInterface $response)
     {
         $params = $request->getParsedBody();

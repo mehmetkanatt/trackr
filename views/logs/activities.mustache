@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+    {{> head }}
+</head>
+<body class="vertical dark">
+<div class="wrapper">
+    {{> include}}
+    <nav class="topnav navbar navbar-light">
+        {{> navbar }}
+    </nav>
+    <main role="main" class="main-content">
+        <div class="container-fluid">
+            <div class="row justify-content-center">
+                <div class="col-12">
+
+                    <div class="card card-fill timeline">
+                        <div class="card-header">
+                            <strong class="card-title">Recent Activity</strong>
+                            <!-- <a class="float-right small text-muted" href="#!">View all</a> -->
+                        </div>
+                        <div class="card-body">
+
+                            {{#activities}}
+                                <div class="pb-3 timeline-item item-success">
+                                    <div class="pl-5">
+                                        <div class="mb-3"><span class="badge badge-light">{{relativeCreatedAt}}</span> {{{activity}}} </div>
+                                    </div>
+                                </div>
+                            {{/activities}}
+
+                            {{^activities}}
+                                <div class="pb-3 timeline-item item-danger">
+                                    <div class="pl-5">
+                                        <div class="mb-3">No recent activity</div>
+                                    </div>
+                                </div>
+                            {{/activities}}
+
+                        </div> <!-- / .card-body -->
+                    </div>
+
+                </div> <!-- .col-12 -->
+            </div> <!-- .row -->
+        </div> <!-- .container-fluid -->
+    </main> <!-- main -->
+</div> <!-- .wrapper -->
+
+{{> menu }}
+
+<script>
+    $(document).ready(function () {
+
+    });
+</script>
+</body>
+</html>

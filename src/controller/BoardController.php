@@ -12,17 +12,20 @@ use \Psr\Http\Message\ServerRequestInterface;
 use \Psr\Http\Message\ResponseInterface;
 use Psr\Container\ContainerInterface;
 use Slim\Http\StatusCode;
+use App\model\ActivityModel;
 
 class BoardController extends Controller
 {
     private $boardModel;
     private $taskModel;
+    private $activityModel;
 
     public function __construct(ContainerInterface $container)
     {
         parent::__construct($container);
         $this->boardModel = new BoardModel($container);
         $this->taskModel = new TaskModel($container);
+        $this->activityModel = new ActivityModel($container);
     }
 
     public function index(ServerRequestInterface $request, ResponseInterface $response)
@@ -99,6 +102,7 @@ class BoardController extends Controller
 
         $task = $this->taskModel->createTask($params['title'], $board['id'], null, $params['eisenhowerStatus']);
 
+        $this->activityModel->logCreateNewTask($board['title'], $task['title'], $task['id']);
         $data = [
             'taskUid' => $task['uid'],
             'message' => lang\En::TASK_SUCCESSFULLY_CREATED,
@@ -139,7 +143,9 @@ class BoardController extends Controller
 
         $this->taskModel->updateTaskStatus($task['id'], $params['to']);
 
-        // TODO activity log girilmeli -- from=to olabilir o zaman log girilmemeli
+        if ($params['to'] !== $params['from']) {
+            $this->activityModel->logTaskStatus($board['title'], $task['title'], $task['id'], $params['from'], $params['to']);
+        }
 
         $data = [
             'message' => lang\En::TASK_STATUS_SUCCESSFULLY_UPDATED,

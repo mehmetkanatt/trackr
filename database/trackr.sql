@@ -1,3 +1,16 @@
+CREATE TABLE `activity_logs`
+(
+    `id`         int                                                           NOT NULL AUTO_INCREMENT,
+    `source`     varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NOT NULL,
+    `source_id`  int DEFAULT NULL,
+    `activity`   varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+    `created_at` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NOT NULL,
+    `user_id`    int                                                           NOT NULL,
+    `type`       int DEFAULT NULL,
+    `old_id`     int DEFAULT NULL,
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE `author`
 (
     `id`     int                                                           NOT NULL AUTO_INCREMENT,

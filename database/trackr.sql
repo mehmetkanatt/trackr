@@ -348,7 +348,7 @@ CREATE TABLE `tasks`
     `uid`               varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
     `title`             varchar(255) COLLATE utf8mb4_unicode_ci                               DEFAULT NULL,
     `board_id`          int                                                          NOT NULL,
-    `description_hid`   int                                                                   DEFAULT NULL,
+    `body_hid`          int                                                                   DEFAULT NULL,
     `eisenhower_status` int                                                          NOT NULL DEFAULT '0',
     `status`            int                                                                   DEFAULT '0',
     `created_at`        varchar(20) COLLATE utf8mb4_unicode_ci                       NOT NULL,

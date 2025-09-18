@@ -8,14 +8,14 @@ CREATE TABLE `author`
 
 CREATE TABLE `boards`
 (
-    `id`              int                                                           NOT NULL AUTO_INCREMENT,
-    `uid`             varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NOT NULL,
-    `title`           varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-    `description_hid` int DEFAULT NULL,
-    `status`          int DEFAULT '0',
-    `created_at`      varchar(20) COLLATE utf8mb4_unicode_ci                        NOT NULL,
-    `updated_at`      varchar(20) COLLATE utf8mb4_unicode_ci                        NOT NULL,
-    `user_id`         int                                                           NOT NULL,
+    `id`          int                                                           NOT NULL AUTO_INCREMENT,
+    `uid`         varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  NOT NULL,
+    `title`       varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+    `description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+    `status`      int                                     DEFAULT '0',
+    `created_at`  varchar(20) COLLATE utf8mb4_unicode_ci                        NOT NULL,
+    `updated_at`  varchar(20) COLLATE utf8mb4_unicode_ci                        NOT NULL,
+    `user_id`     int                                                           NOT NULL,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

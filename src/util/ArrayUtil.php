@@ -9,7 +9,7 @@ class ArrayUtil
     {
         return array_map(function ($item) {
             if (is_array($item)) {
-                return trimArrayElements($item);
+                return self::trimArrayElements($item);
             }
             return is_string($item) ? trim($item) : $item;
         }, $array);

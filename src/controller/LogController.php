@@ -8,6 +8,7 @@ use App\model\BookModel;
 use App\model\ChainModel;
 use App\model\HighlightModel;
 use App\model\LogModel;
+use App\model\ActivityModel;
 use App\util\markdown\Markdown;
 use App\util\VersionDiffUtil;
 use Psr\Container\ContainerInterface;
@@ -23,6 +24,7 @@ class LogController extends Controller
     private $bookmarkModel;
     private $highlightModel;
     private $chainModel;
+    private $activityModel;
 
     public function __construct(ContainerInterface $container)
     {
@@ -32,6 +34,7 @@ class LogController extends Controller
         $this->bookmarkModel = new BookmarkModel($container);
         $this->highlightModel = new HighlightModel($container);
         $this->chainModel = new ChainModel($container);
+        $this->activityModel = new ActivityModel($container);
     }
 
     public function index(ServerRequestInterface $request, ResponseInterface $response)

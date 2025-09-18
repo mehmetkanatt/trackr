@@ -20,4 +20,9 @@ enum BookStatus: int
             self::PRIORITIZED->value,
         ];
     }
+
+    public function capitalizedStatusName(): string
+    {
+        return ucfirst(strtolower($this->name));
+    }
 }

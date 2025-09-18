@@ -9,4 +9,9 @@ enum TaskStatus: int
     case INPROGRESS = 2;
     case DONE = 3;
     case CANCELED = 4;
+
+    public function capitalizedStatusName(): string
+    {
+        return ucfirst(strtolower($this->name));
+    }
 }

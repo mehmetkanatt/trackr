@@ -8,4 +8,10 @@ enum EisenhowerStatusColor: string
     case DELEGATE = 'bg-info-dark';
     case SCHEDULE = 'bg-warning-dark';
     case DO = 'bg-danger-darker';
+
+    public function capitalizedStatusColorName(): string
+    {
+        return ucfirst(strtolower($this->name));
+    }
+
 }

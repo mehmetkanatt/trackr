@@ -9,4 +9,9 @@ enum BookmarkStatus: int
     case DONE = 2;
     case ABANDONED = 3;
     case PRIORITIZED = 4;
+
+    public function capitalizedStatusName(): string
+    {
+        return ucfirst(strtolower($this->name));
+    }
 }

@@ -600,7 +600,7 @@ class BookmarkModel
             throw CustomException::dbError(StatusCode::HTTP_SERVICE_UNAVAILABLE, json_encode($stm->errorInfo()));
         }
 
-        return true;
+        return $this->dbConnection->lastInsertId();
     }
 
     public function updateKeyword($bookmarkId, $keyword)

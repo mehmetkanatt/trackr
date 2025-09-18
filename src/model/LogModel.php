@@ -53,7 +53,7 @@ class LogModel
 
         $sql = 'SELECT l.id, l.date, l.log_hid, l.user_id, h.highlight AS log
                 FROM logs l
-                INNER JOIN highlights h ON l.log_hid = h.id
+                LEFT JOIN highlights h ON l.log_hid = h.id
                 WHERE l.date = :date AND l.user_id = :user_id ORDER BY l.id DESC LIMIT 1';
 
         $stm = $this->dbConnection->prepare($sql);

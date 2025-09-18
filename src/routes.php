@@ -33,6 +33,7 @@ $app->group('', function () {
     $this->get('/', HomeController::class . ':index')->setName('home');
 
     $this->get('/logs', LogController::class . ':index');
+    $this->get('/logs/activities', LogController::class . ':activities');
     $this->post('/logs', LogController::class . ':save');
 
     $this->get('/boards', BoardController::class . ':index');

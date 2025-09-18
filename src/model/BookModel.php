@@ -15,10 +15,12 @@ class BookModel
 {
     /** @var \PDO $dbConnection */
     private $dbConnection;
+    private $activityModel;
 
     public function __construct(ContainerInterface $container)
     {
         $this->dbConnection = $container->get('db');
+        $this->activityModel = new ActivityModel($container);
     }
 
     public function getStartOfReadings()
@@ -228,6 +230,31 @@ class BookModel
         }
 
         return $id;
+    }
+
+    public function getBookByUid($uid)
+    {
+        $book = [];
+
+        $sql = "SELECT *, (SELECT GROUP_CONCAT(a.author SEPARATOR ', ')
+                           FROM book_authors ba
+                            INNER JOIN author a ON ba.author_id = a.id
+                           WHERE ba.book_id = b.id) AS author
+                FROM books b
+                WHERE uid = ";
+
+        $stm = $this->dbConnection->prepare($sql);
+        $stm->bindParam(':uid', $uid, \PDO::PARAM_STR);
+
+        if (!$stm->execute()) {
+            throw CustomException::dbError(StatusCode::HTTP_SERVICE_UNAVAILABLE, json_encode($stm->errorInfo()));
+        }
+
+        while ($row = $stm->fetch(\PDO::FETCH_ASSOC)) {
+            $book = $row;
+        }
+
+        return $book;
     }
 
     public function readingAverage()
@@ -835,9 +862,10 @@ class BookModel
     {
         $book = [];
 
-        $sql = "SELECT * 
-                FROM books_finished
-                WHERE book_id = :book_id AND user_id = :user_id";
+        $sql = "SELECT bf.*, p.name AS pathName
+                FROM books_finished bf
+                INNER JOIN paths p ON bf.path_id = p.id
+                WHERE bf.book_id = :book_id AND bf.user_id = :user_id";
 
         $stm = $this->dbConnection->prepare($sql);
         $stm->bindParam(':book_id', $finishedBookId, \PDO::PARAM_INT);
@@ -984,7 +1012,7 @@ class BookModel
             throw CustomException::dbError(StatusCode::HTTP_SERVICE_UNAVAILABLE, json_encode($stm->errorInfo()));
         }
 
-        return true;
+        return $this->dbConnection->lastInsertId();
     }
 
     public function createAuthor($author)
@@ -1026,7 +1054,7 @@ class BookModel
             throw CustomException::dbError(StatusCode::HTTP_SERVICE_UNAVAILABLE, json_encode($stm->errorInfo()));
         }
 
-        return true;
+        return $this->dbConnection->lastInsertId();
     }
 
     public function addBookToPath($pathId, $bookId)
@@ -1414,27 +1442,6 @@ class BookModel
         return $history;
     }
 
-    public function addActivityLog($pathID, $bookID, $activity)
-    {
-        $timestamp = time();
-
-        $sql = 'INSERT INTO book_activity_logs (path_id, book_id, activity, timestamp, user_id) 
-                VALUES (:path_id, :book_id, :activity, :timestamp, :user_id)';
-
-        $stm = $this->dbConnection->prepare($sql);
-        $stm->bindParam(':path_id', $pathID, \PDO::PARAM_INT);
-        $stm->bindParam(':book_id', $bookID, \PDO::PARAM_INT);
-        $stm->bindParam(':user_id', $_SESSION['userInfos']['user_id'], \PDO::PARAM_INT);
-        $stm->bindParam(':activity', $activity, \PDO::PARAM_STR);
-        $stm->bindParam(':timestamp', $timestamp, \PDO::PARAM_INT);
-
-        if (!$stm->execute()) {
-            throw CustomException::dbError(StatusCode::HTTP_SERVICE_UNAVAILABLE, json_encode($stm->errorInfo()));
-        }
-
-        return true;
-    }
-
     public function createAuthorOperations($rawAuthor)
     {
         $resultIds = [];
@@ -1448,8 +1455,9 @@ class BookModel
                 $authorExist = $this->getAuthorByName($author);
 
                 if (!$authorExist) {
-                    $resultIds[] = $this->createAuthor($author);
-                    $this->addActivityLog(null, null, "add new author: $author");
+                    $authorId = $this->createAuthor($author);
+                    $resultIds[] = $authorId;
+                    $this->activityModel->logCreateNewAuthor($author, $authorId);
                 } else {
                     $resultIds[] = $authorExist['id'];
                 }
@@ -1462,8 +1470,9 @@ class BookModel
 
             if (!$authorExist) {
                 $author = trim($rawAuthor);
-                $resultIds[] = $this->createAuthor($author);
-                $this->addActivityLog(null, null, "add new author: $author");
+                $authorId = $this->createAuthor($author);
+                $resultIds[] = $authorId;
+                $this->activityModel->logCreateNewAuthor($author, $authorId);
             } else {
                 $resultIds[] = $authorExist['id'];
             }
@@ -1480,7 +1489,7 @@ class BookModel
 
         if (!$authorExist) {
             $authorId = $this->createAuthor($authorName);
-            $this->addActivityLog(null, null, "add new author: $authorName");
+            $this->activityModel->logCreateNewAuthor($authorName, $authorId);
         } else {
             $authorId = $authorExist['id'];
         }

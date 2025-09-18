@@ -2,6 +2,8 @@
 
 namespace App\controller;
 
+use App\model\ActivityModel;
+use App\util\lang;
 use App\enum\BookStatus;
 use App\enum\PathStatus;
 use App\enum\Sources;
@@ -20,12 +22,14 @@ class BookController extends Controller
 {
     private $bookModel;
     private $tagModel;
+    private $activityModel;
 
     public function __construct(ContainerInterface $container)
     {
         parent::__construct($container);
         $this->bookModel = new BookModel($container);
         $this->tagModel = new TagModel($container);
+        $this->activityModel = new ActivityModel($container);
     }
 
     public function booksPathInside(ServerRequestInterface $request, ResponseInterface $response, $args)
@@ -162,38 +166,48 @@ class BookController extends Controller
         $params = $request->getParsedBody();
 
         if (!isset($params['amount']) || !$params['amount']) {
-            throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST, "Amount cannot be null!");
+            throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST, lang\En::BOOK_AMOUNT_CANNOT_BE_NULL);
         }
 
-        $pathId = $this->bookModel->getPathIdByUid($params['pathUID']);
+        $pathDetail = $this->bookModel->getPathByUid($params['pathUID']);
+        $pathId = $pathDetail['id'];
 
-        $pathDetails = $this->bookModel->getPathById($pathId);
-        $bookId = $this->bookModel->getBookIdByUid($args['bookUID']);
+        $bookDetail = $this->bookModel->getBookByUid($args['bookUID']);
+        $bookId = $bookDetail['id'];
 
-        $bookDetail = $this->bookModel->getBookDetailByBookIdAndPathId($bookId, $pathDetails['id']);
-        $readAmount = $this->bookModel->getReadAmount($bookId, $pathDetails['id']);
+        $pathBookDetail = $this->bookModel->getBookDetailByBookIdAndPathId($bookId, $pathId);
+        $authorAndBook = $bookDetail['author'] . ' - ' . $bookDetail['title'];
+        $oldStatus = (int)$pathBookDetail['status'];
 
-        if ($pathDetails['status']) {
+        $pathBookDetail = $this->bookModel->getBookDetailByBookIdAndPathId($bookId, $pathDetail['id']);
+        $readAmount = $this->bookModel->getReadAmount($bookId, $pathDetail['id']);
+
+        if ($pathDetail['status']) {
             $resource['responseCode'] = StatusCode::HTTP_BAD_REQUEST;
-            $resource['message'] = "You can't add progress to expired paths!";
+            $resource['message'] = lang\En::BOOK_CANNOT_ADD_PROGRESS_TO_EXPIRED_PATH;
         } else {
-            if ($bookDetail['status'] == 2) {
-                $resource['message'] = "Can't add progress to done books!";
+            if ($oldStatus == BookStatus::DONE->value) {
+                $resource['message'] = lang\En::BOOK_CANNOT_ADD_PROGRESS_TO_DONE_BOOK;
                 $resource['responseCode'] = StatusCode::HTTP_BAD_REQUEST;
             } else {
 
-                if (($bookDetail['page_count'] - $readAmount) - $params['amount'] < 0) {
+                if (($pathBookDetail['page_count'] - $readAmount) - $params['amount'] < 0) {
                     $resource['responseCode'] = StatusCode::HTTP_BAD_REQUEST;
-                    $resource['message'] = "You can't add progress more than remaining amount!";
+                    $resource['message'] = lang\En::BOOK_CANNOT_ADD_PROGRESS_MORE_THAN_REMAINING_AMOUNT;
                 } else {
                     if ($params['amount'] > 0) {
                         $recordTime = $params['readYesterday'] ? strtotime("today 1 sec ago") : time();
-                        $this->bookModel->insertProgressRecord($bookId, $pathId, $params['amount'], $recordTime);
-                        $this->bookModel->setBookPathStatus($pathId, $bookId, BookStatus::STARTED->value);
+                        $bookTrackingId = $this->bookModel->insertProgressRecord($bookId, $pathId, $params['amount'], $recordTime);
+
+                        if ($oldStatus !== BookStatus::STARTED->value) {
+                            $this->bookModel->changePathBookStatus($pathId, $bookId, BookStatus::STARTED->value);
+                            $this->activityModel->logBookReadingStatus($pathDetail['name'], $authorAndBook, $oldStatus, BookStatus::STARTED->value, $pathBookDetail['id']);
+                        }
+
                         $resource['responseCode'] = StatusCode::HTTP_OK;
                         $resource['message'] = "Success!";
-                        $this->bookModel->addActivityLog($pathDetails['id'], $bookId,
-                            "read {$params['amount']} page(s)");
+                        $authorAndBook = $bookDetail['author'] . ' - ' . $bookDetail['title'];
+                        $this->activityModel->logReadingProgress($pathDetail['name'], $authorAndBook, $params['amount'], $bookTrackingId);
                     } else {
                         $resource['responseCode'] = StatusCode::HTTP_BAD_REQUEST;
                         $resource['message'] = "Amount must be positive";
@@ -210,16 +224,17 @@ class BookController extends Controller
 
     public function createAuthor(ServerRequestInterface $request, ResponseInterface $response, $args)
     {
+        // @deprecated
         $params = $request->getParsedBody();
 
         if (!isset($params['author']) || !$params['author']) {
-            throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST, "Author cannot be null!");
+            throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST, lang\En::BOOK_AUTHOR_CANNOT_BE_NULL);
         }
 
         $this->bookModel->createAuthorOperations($params['author']);
 
         $resource['responseCode'] = StatusCode::HTTP_CREATED;
-        $resource['message'] = "Created author(s) successfully";
+        $resource['message'] = lang\En::BOOK_AUTHOR_CREATED_SUCCESSFULLY;
 
         return $this->response($resource['responseCode'], $resource);
     }
@@ -230,30 +245,35 @@ class BookController extends Controller
 
         if (!isset($args['bookUID']) || !isset($params['pathUID']) || !isset($params['status'])) {
             $resource['responseCode'] = StatusCode::HTTP_BAD_REQUEST;
-            $resource['message'] = "Missing required params";
+            $resource['message'] = lang\En::MISSING_REQUIRED_FIELDS;
 
             return $this->response($resource['responseCode'], $resource);
         }
 
-        $pathId = $this->bookModel->getPathIdByUid($params['pathUID']);
-        $bookId = $this->bookModel->getBookIdByUid($args['bookUID']);
-        $details = $this->bookModel->getBookDetailByBookIdAndPathId($bookId, $pathId);
+        $pathDetail = $this->bookModel->getPathByUid($params['pathUID']);
+        $pathId = $pathDetail['id'];
+        $bookDetail = $this->bookModel->getBookByUid($args['bookUID']);
+        $bookId = $bookDetail['id'];
 
-        if ($details['status'] === BookStatus::PRIORITIZED->value) {
+        $pathBookDetail = $this->bookModel->getBookDetailByBookIdAndPathId($bookId, $pathId);
+        $authorAndBook = $bookDetail['author'] . ' - ' . $bookDetail['title'];
+        $oldStatus = $pathBookDetail['status'];
+        $newStatus = $params['status'];
+
+        if ($oldStatus === BookStatus::PRIORITIZED->value) {
             throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST, "Already prioritized!");
         }
 
-        if ((int)$params['status'] === BookStatus::PRIORITIZED->value && $details['status'] !== BookStatus::NEW->value) {
+        if ((int)$newStatus === BookStatus::PRIORITIZED->value && $oldStatus !== BookStatus::NEW->value) {
             throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST, "Book status is not 'New'!");
         }
 
-        if (!in_array((int)$params['status'], BookStatus::toArray())) {
+        if (!in_array((int)$newStatus, BookStatus::toArray())) {
             throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST, "Unknown book status");
         }
 
-        $this->bookModel->changePathBookStatus($pathId, $bookId, $params['status']);
-        $this->bookModel->addActivityLog($pathId, $bookId,
-            "changed book status from {$details['status']} to {$params['status']}");
+        $this->bookModel->changePathBookStatus($pathId, $bookId, $newStatus);
+        $this->activityModel->logBookReadingStatus($pathDetail['name'], $authorAndBook, $oldStatus, $newStatus, $pathBookDetail['id']);
 
         $resource['responseCode'] = StatusCode::HTTP_OK;
         $resource['message'] = "Changed status successfully";
@@ -263,11 +283,18 @@ class BookController extends Controller
 
     public function addToLibrary(ServerRequestInterface $request, ResponseInterface $response, $args)
     {
-        $bookId = $this->bookModel->getBookIdByUid($args['bookUID']);
-        $this->bookModel->addToLibrary($bookId);
+        $book = $this->bookModel->getBookByUid($args['bookUID']);
+        $bookId = $book['id'];
+
+        if (!$bookId) {
+            throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST, lang\En::BOOK_NOT_FOUND);
+        }
+
+        $authorAndBook = $book['author'] . ' - ' . $book['title'];
+        $ownershipId = $this->bookModel->addToLibrary($bookId);
         $_SESSION['badgeCounts']['myBookCount'] += 1;
 
-        $this->bookModel->addActivityLog(null, $bookId, "added to library with button");
+        $this->activityModel->logAddBookToLibrary($authorAndBook, $ownershipId);
 
         $resource['responseCode'] = StatusCode::HTTP_OK;
         $resource['message'] = "Success";
@@ -279,17 +306,18 @@ class BookController extends Controller
     {
         $params = $request->getParsedBody();
 
-        $pathId = $this->bookModel->getPathIdByUid($params['pathUID']);
-        $bookId = $this->bookModel->getBookIdByUid($args['bookUID']);
+        $path = $this->bookModel->getPathByUid($params['pathUID']);
+        $pathId = $path['id'];
+        $book = $this->bookModel->getBookByUid($args['bookUID']);
+        $bookId = $book['id'];
+        $authorAndBook = $book['author'] . ' - ' . $book['title'];
 
-        $pathDetails = $this->bookModel->getPathById($pathId);
-
-        if ($pathDetails['status']) {
+        if ($path['status']) {
             throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST, "You can't add book to expired paths!");
         }
 
-        $this->bookModel->addBookToPath($pathId, $bookId);
-        $this->bookModel->addActivityLog($pathId, $bookId, "added to path");
+        $pathBookId = $this->bookModel->addBookToPath($pathId, $bookId);
+        $this->activityModel->logAddBookToPath($path['name'], $authorAndBook, $pathBookId);
 
         $resource['responseCode'] = StatusCode::HTTP_OK;
         $resource['message'] = "Success";
@@ -304,10 +332,10 @@ class BookController extends Controller
         $pathId = $this->bookModel->getPathIdByUid($args['pathUID']);
 
         $pathDetail = $this->bookModel->getPathById($pathId);
-        $extendedFinishDate = strtotime($pathDetail['finish']) + 864000;
+        $extendedFinishDate = strtotime($pathDetail['finish']) + 864000; // 10 days
         $this->bookModel->extendFinishDate($pathId, $extendedFinishDate);
 
-        $this->bookModel->addActivityLog($pathId, null, "extend path finish date");
+        $this->activityModel->logExtendPathFinishDate($pathDetail['name'], 10, $pathId);
 
         $resource['responseCode'] = StatusCode::HTTP_OK;
         $resource['message'] = "Success";
@@ -419,16 +447,18 @@ class BookController extends Controller
             $this->bookModel->insertBookAuthor($bookId, $authorId);
         }
 
+        $authorAndBook = implode(', ', $authors) . ' - ' . $params['bookTitle'];
+
         if ($params['own']) {
-            $this->bookModel->addToLibrary($bookId, $params['notes']);
+            $ownershipId = $this->bookModel->addToLibrary($bookId, $params['notes']);
             $_SESSION['badgeCounts']['myBookCount'] += 1;
-            $this->bookModel->addActivityLog(null, $bookId, "added to library");
+            $this->activityModel->logAddBookToLibrary($authorAndBook, $ownershipId, $params['notes']);
         }
 
         $_SESSION['badgeCounts']['allBookCount'] += 1;
         unset($_SESSION['books']['list']);
 
-        $this->bookModel->addActivityLog(null, $bookId, 'created new book');
+        $this->activityModel->logCreateNewBook($authorAndBook, $bookId);
 
         $resource['responseCode'] = StatusCode::HTTP_OK;
         $resource['message'] = "Successfully created new book!";
@@ -447,7 +477,7 @@ class BookController extends Controller
 
         $pathID = $this->bookModel->createPath($params['pathName'], $params['pathFinish']);
 
-        $this->bookModel->addActivityLog($pathID, null, 'created new path');
+        $this->activityModel->logCreateNewPath($params['pathName'], $pathID);
 
         $resource['responseCode'] = StatusCode::HTTP_OK;
         $resource['message'] = "Success";
@@ -458,16 +488,20 @@ class BookController extends Controller
     public function removeBookFromPath(ServerRequestInterface $request, ResponseInterface $response, $args)
     {
         $params = $request->getParsedBody();
-        $pathId = $this->bookModel->getPathIdByUid($args['pathUID']);
-        $bookId = $this->bookModel->getBookIdByUid($params['bookUID']);
+        $path = $this->bookModel->getPathByUid($args['pathUID']);
+        $pathId = $path['id'];
+        $book = $this->bookModel->getBookByUid($params['bookUID']);
+        $bookId = $book['id'];
+        $authorAndBook = $book['author'] . ' - ' . $book['title'];
 
         $bookDetail = $this->bookModel->getBookDetailByBookIdAndPathId($bookId, $pathId);
+        $currentStatus = $bookDetail['status'];
 
-        if ($bookDetail['status'] == 0) {
+        if ($currentStatus === BookStatus::NEW->value) {
             $this->bookModel->deleteBookTrackingsByPath($bookId, $pathId);
             $this->bookModel->deleteBookFromPath($bookId, $pathId);
 
-            $this->bookModel->addActivityLog($pathId, $bookId, 'removed from path');
+            $this->activityModel->logRemoveBookFromPath($path['name'], $authorAndBook, null);
 
             unset($_SESSION['books']['daily_reading_amount_inserted']);
             $resource['message'] = "Successfully removed.";
@@ -483,18 +517,25 @@ class BookController extends Controller
     public function rateBook(ServerRequestInterface $request, ResponseInterface $response, $args)
     {
         $params = $request->getParsedBody();
-        $finishedBookUid = $args['bookUID'];
-        $finishedBookId = $this->bookModel->getBookIdByUid($finishedBookUid);
+        $bookUid = $args['bookUID'];
+        $book = $this->bookModel->getBookByUid($bookUid);
+        $bookId = $book['id'];
+        $authorAndBook = $book['author'] . ' - ' . $book['title'];
+        $rate = (int)$params['rate'];
 
-        if (!$finishedBookId) {
-            throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST, 'Book not found');
+        if (!$bookId) {
+            throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST, lang\En::BOOK_NOT_FOUND);
         }
 
-        $finishedBookDetails = $this->bookModel->finishedBookByID($finishedBookId);
+        if (!isset($params['rate']) || $rate < 1 || $rate > 5) {
+            throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST, 'Rate is invalid');
+        }
 
-        $this->bookModel->rateBook($finishedBookId, $params['rate']);
-        $this->bookModel->addActivityLog($finishedBookDetails['path_id'], $finishedBookDetails['book_id'],
-            "rated {$params['rate']}");
+        $booksFinishedDetails = $this->bookModel->finishedBookByID($bookId);
+        $closureId = $booksFinishedDetails['id'];
+
+        $this->bookModel->rateBook($bookId, $rate);
+        $this->activityModel->logRateBook($booksFinishedDetails['pathName'], $authorAndBook, $rate, $closureId);
 
         $resource['message'] = "Successfully rated!";
         $resource['responseCode'] = StatusCode::HTTP_OK;
@@ -554,6 +595,16 @@ class BookController extends Controller
     public function getPathsGraphicData(ServerRequestInterface $request, ResponseInterface $response)
     {
         $graphicDatas = $this->bookModel->getPathsGraphicData(30);
+
+        $resource['data'] = $graphicDatas;
+        $resource['responseCode'] = StatusCode::HTTP_OK;
+
+        return $this->response($resource['responseCode'], $resource);
+    }
+
+    public function getBookGraphicData(ServerRequestInterface $request, ResponseInterface $response)
+    {
+        $graphicDatas = $this->bookModel->getBooksGraphicData(30);
 
         $resource['data'] = $graphicDatas;
         $resource['responseCode'] = StatusCode::HTTP_OK;

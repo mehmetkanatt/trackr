@@ -26,6 +26,9 @@ class En
     const TASK_STATUS_CANNOT_BE_NULL = 'Task status cannot be null!';
     const TASK_NEW_STATUS_CANNOT_BE_NULL = "Task's new status cannot be null!";
     const TASK_STATUS_SUCCESSFULLY_UPDATED = 'Task status successfully updated!';
+    const TASK_OLD_AND_NEW_STATUS_CANNOT_BE_SAME = "Task's old and new status cannot be same!";
+    const TASK_BODY_CANNOT_BE_NULL = 'Task body cannot be null!';
+    const TASK_BODY_SUCCESSFULLY_UPDATED = 'Task body successfully updated!';
 
 
     const BOOKMARK_INCONSISTENCY_FOR_ADDING_HIGHLIGHT = "Inconsistency! You're trying to add highlight for different bookmark!";

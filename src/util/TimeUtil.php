@@ -116,4 +116,35 @@ class TimeUtil
             'minutes' => $minutes
         ];
     }
+
+    static function relativeTime($time): string
+    {
+        // Accept timestamps or date strings
+        if (!is_int($time)) {
+            $time = strtotime($time);
+        }
+
+        $diff = time() - $time;
+
+        if ($diff < 1) {
+            return "just now";
+        }
+
+        $units = [
+            31536000 => 'year',
+            2592000  => 'month',
+            604800   => 'week',
+            86400    => 'day',
+            3600     => 'hour',
+            60       => 'minute',
+            1        => 'second'
+        ];
+
+        foreach ($units as $seconds => $name) {
+            if ($diff >= $seconds) {
+                $value = floor($diff / $seconds);
+                return $value . ' ' . $name . ($value > 1 ? 's' : '') . ' ago';
+            }
+        }
+    }
 }

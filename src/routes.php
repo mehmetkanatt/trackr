@@ -37,10 +37,12 @@ $app->group('', function () {
     $this->post('/logs', LogController::class . ':save');
 
     $this->get('/boards', BoardController::class . ':index');
-    $this->post('/boards', BoardController::class . ':createBoard');
+    $this->post('/api/v1/boards', BoardController::class . ':createBoard');
     $this->get('/boards/{boardUID}', BoardController::class . ':tasks');
-    $this->post('/boards/{boardUID}', BoardController::class . ':createTask');
-    $this->patch('/boards/{boardUID}/tasks/{taskUID}/status', BoardController::class . ':changeTaskStatus');
+    $this->post('/api/v1/boards/{boardUID}', BoardController::class . ':createTask');
+    $this->get('/api/v1/boards/{boardUID}/tasks/{taskUID}', BoardController::class . ':getTask');
+    $this->patch('/api/v1/boards/{boardUID}/tasks/{taskUID}/body', BoardController::class . ':updateTaskBody');
+    $this->patch('/api/v1/boards/{boardUID}/tasks/{taskUID}/status', BoardController::class . ':updateTaskStatus');
 
     $this->get('/menu-badge-counts', HomeController::class . ':getMenuBadgeCounts');
     $this->get('/navbar-infos', HomeController::class . ':getNavbarInfos');

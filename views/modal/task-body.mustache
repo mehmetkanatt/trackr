@@ -1,0 +1,155 @@
+<div class="modal fade" id="task-body-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title" id="task-title">{{#task}}{{title}} Body{{/task}}</h1>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+
+                <textarea id="task-body" hidden></textarea>
+
+                <div class="form-row">
+                    <div class="form-group col-12">
+                        <select id="tags" name="tags[]" class="form-control select2-multi" hidden>
+                        </select>
+                    </div>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button id="save" type="button" class="btn btn-primary">Save</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="/js/simplemde.min.js"></script>
+<script src="/js/codemirror-4.inline-attachment.min.js"></script>
+<script src="/js/mustache.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+
+        var unsavedChanges = false;
+        var simplemde = null;
+        var taskUID = null;
+        let shortcutHandler = null;
+
+        $('#task-body-modal').on('shown.bs.modal', function (event) {
+            const button = $(event.relatedTarget);
+            taskUID = button.data('uid');
+
+            var result = ajaxCall('GET', '/api/v1/boards/{{boardUID}}/tasks/' + taskUID, null, false, false)
+
+            if (result !== false) {
+                init(result.data);
+            }
+        });
+
+        $('#task-body-modal').on('hidden.bs.modal', function () {
+            $('#tags').select2('destroy');
+
+            if (simplemde) {
+                simplemde.toTextArea();
+                simplemde = null;
+            }
+
+            if (unsavedChanges) {
+                if (confirm("You have unsaved changes. Do you want to save them?")) {
+                    updateTaskBody();
+                    unsavedChanges = false
+                }
+            }
+
+            if (shortcutHandler) {
+                console.log('Removing shortcut handler');
+                $(document).off('keydown', shortcutHandler);
+                shortcutHandler = null;
+            }
+
+            taskUID = null
+            unsavedChanges = false
+        });
+
+        var init = function (data) {
+
+            $("#task-title").text(data.task.title + " Body");
+
+            shortcutHandler = function (e) {
+                if (e.metaKey && e.keyCode === 13) {
+                    //updateTaskBody();
+                    console.log('trigged cmd+enter');
+                }
+            };
+
+            $(document).on('keydown', shortcutHandler);
+
+            const select2Data = Object.values(data.globalTags).map(item => ({
+                id: item.id,
+                text: item.tag,
+                selected: item.selected === "selected"
+            }));
+
+            $('#tags').select2({
+                placeholder: "Choose tags",
+                multiple: true,
+                theme: 'bootstrap4',
+                allowClear: true,
+                tags: true,              // allow adding new tags
+                tokenSeparators: [','],  // split new tags by comma
+                data: select2Data
+            });
+
+            window.addEventListener("beforeunload", function (event) {
+                if (unsavedChanges) {
+                    event.preventDefault();
+                }
+            });
+
+            $("#save").on('click', function (e) {
+                updateTaskBody();
+            });
+
+            simplemde = new SimpleMDE({
+                element: $("#task-body")[0],
+                toolbar: ["bold", "italic", "strikethrough", "heading", "code", "quote", "unordered-list", "ordered-list", "clean-block", "link", "image", "table", "horizontal-rule", "preview"],
+                insertTexts: {"image": ["![", "](/img/)"]},
+                autofocus: true,
+                initialValue: data.task.body ? data.task.body.highlight : "",
+            });
+
+            inlineAttachment.editors.codemirror4.attach(simplemde.codemirror, {
+                uploadUrl: '/images'
+            });
+
+            simplemde.codemirror.on("change", function () {
+                unsavedChanges = true;
+            });
+
+        }
+
+        var updateTaskBody = function () {
+
+            var body = simplemde.value();
+            var tags = $('#tags').val() || "";
+
+            var data = {
+                body: body,
+                tags: tags
+            };
+            var result = ajaxCall('PATCH', "/api/v1/boards/{{boardUID}}/tasks/" + taskUID + '/body', data)
+
+            if (result !== false) {
+                unsavedChanges = false;
+            }
+        }
+
+    });
+</script>

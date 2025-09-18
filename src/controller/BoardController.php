@@ -3,10 +3,13 @@
 namespace App\controller;
 
 use App\enum\EisenhowerStatus;
+use App\enum\EisenhowerStatusColor;
 use App\enum\TaskStatus;
 use App\exception\CustomException;
 use App\model\BoardModel;
 use App\model\TaskModel;
+use App\model\TagModel;
+use App\model\HighlightModel;
 use App\util\lang;
 use \Psr\Http\Message\ServerRequestInterface;
 use \Psr\Http\Message\ResponseInterface;
@@ -19,6 +22,8 @@ class BoardController extends Controller
     private $boardModel;
     private $taskModel;
     private $activityModel;
+    private $tagModel;
+    private $highlightModel;
 
     public function __construct(ContainerInterface $container)
     {
@@ -26,6 +31,9 @@ class BoardController extends Controller
         $this->boardModel = new BoardModel($container);
         $this->taskModel = new TaskModel($container);
         $this->activityModel = new ActivityModel($container);
+        $this->tagModel = new TagModel($container);
+        $this->highlightModel = new HighlightModel($container);
+
     }
 
     public function index(ServerRequestInterface $request, ResponseInterface $response)
@@ -76,13 +84,99 @@ class BoardController extends Controller
             throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST, lang\En::BOARD_TITLE_CANNOT_BE_NULL);
         }
 
-        $this->boardModel->createBoard($params['title'], null);
+        $boardName = trim($params['title']);
+        $description = trim($params['description']) ?? '';
+
+        $boardId = $this->boardModel->createBoard($boardName, $description);
+
+        $this->activityModel->logCreateNewBoard($boardName, $boardId);
 
         $data = [
             'message' => lang\En::BOARD_SUCCESSFULLY_CREATED,
         ];
 
         return $this->response(StatusCode::HTTP_CREATED, $data);
+    }
+
+    public function getTask(ServerRequestInterface $request, ResponseInterface $response, $args)
+    {
+        $boardUid = $args['boardUID'];
+        $taskUid = $args['taskUID'];
+        $tags['raw_tags'] = [];
+
+        $board = $this->boardModel->getBoardByUid($boardUid);
+
+        if (empty($board)) {
+            throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST, lang\En::BOARD_NOT_FOUND);
+        }
+
+        $task = $this->taskModel->getTaskByTaskUidAndBoardId($taskUid, $board['id']);
+
+        if (empty($task)) {
+            throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST, lang\En::TASK_NOT_FOUND);
+        }
+
+        if ($task['body_hid']) {
+            $body = $this->highlightModel->getHighlightById($task['body_hid']);
+            $task['body'] = $body;
+            $tags = $body['tags'];
+        }
+
+        $data = [
+            'data' => [
+                'globalTags' => $this->tagModel->getGlobalTagsWithSelection($tags['raw_tags']),
+                'task' => $task,
+            ],
+        ];
+
+        return $this->response(StatusCode::HTTP_OK, $data);
+    }
+
+    public function updateTaskBody(ServerRequestInterface $request, ResponseInterface $response, $args)
+    {
+        $params = (array)$request->getParsedBody();
+        $body = $params['body'];
+        $tags = $params['tags'];
+
+        $boardUid = $args['boardUID'];
+        $taskUid = $args['taskUID'];
+
+        if (empty($body)) {
+            throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST, lang\En::TASK_BODY_CANNOT_BE_NULL);
+        }
+
+        $board = $this->boardModel->getBoardByUid($boardUid);
+
+        if (empty($board)) {
+            throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST, lang\En::BOARD_NOT_FOUND);
+        }
+
+        $task = $this->taskModel->getTaskByTaskUidAndBoardId($taskUid, $board['id']);
+
+        if (empty($task)) {
+            throw CustomException::clientError(StatusCode::HTTP_BAD_REQUEST, lang\En::TASK_NOT_FOUND);
+        }
+
+        $highlightParams = [
+            'highlight' => $body,
+            'book' => null,
+            'source' => 'Task Management',
+            'type' => 3,
+            'tags' => $tags,
+        ];
+
+        if ($task['body_hid']) {
+            $this->highlightModel->updateOperations($task['body_hid'], $highlightParams);
+        } else {
+            $highlightId = $this->highlightModel->createOperations($highlightParams);
+            $this->taskModel->updateTaskBody($task['id'], $highlightId);
+        }
+
+        $data = [
+            'message' => lang\En::TASK_BODY_SUCCESSFULLY_UPDATED,
+        ];
+
+        return $this->response(StatusCode::HTTP_OK, $data);
     }
 
     public function createTask(ServerRequestInterface $request, ResponseInterface $response, $args)
@@ -103,15 +197,20 @@ class BoardController extends Controller
         $task = $this->taskModel->createTask($params['title'], $board['id'], null, $params['eisenhowerStatus']);
 
         $this->activityModel->logCreateNewTask($board['title'], $task['title'], $task['id']);
+
+        $eisenhowerStatusName = EisenhowerStatus::from($task['eisenhower_status'])->name; // get case name from value
+
         $data = [
             'taskUid' => $task['uid'],
+            'eisenhowerStatusColor' => EisenhowerStatusColor::valueFromName($eisenhowerStatusName),
+            'eisenhowerStatusName' => EisenhowerStatus::from($task['eisenhower_status'])->capitalizedStatusName(),
             'message' => lang\En::TASK_SUCCESSFULLY_CREATED,
         ];
 
         return $this->response(StatusCode::HTTP_CREATED, $data);
     }
 
-    public function changeTaskStatus(ServerRequestInterface $request, ResponseInterface $response, $args)
+    public function updateTaskStatus(ServerRequestInterface $request, ResponseInterface $response, $args)
     {
         $boardUid = $args['boardUID'];
         $taskUid = $args['taskUID'];

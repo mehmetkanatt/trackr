@@ -3,6 +3,8 @@
 <head>
     {{> head }}
 
+    <link rel="stylesheet" href="/css/simplemde-theme-dark.min.css">
+
     <style>
         .kanban-column {
             min-height: 200px;
@@ -92,13 +94,19 @@
                                     <div class="card-body kanban-column" data-status="{{statusValue}}" id="{{columnDivId}}">
 
                                         {{#tasks}}
-                                            <div class="kanban-item card mb-2 p-2 text-white {{eisenhowerStatusColor}}" draggable="true" data-uid="{{uid}}">
+                                            <div class="kanban-item card mb-2 p-2 text-white {{eisenhowerStatusColor}}"
+                                                 data-toggle="modal" data-target="#task-body-modal"
+                                                 draggable="true" data-uid="{{uid}}">
                                                 <div class="kanban-task-title fw-bold">{{#existBody}}<span class="fe fe-18 fe-file"></span>{{/existBody}} {{title}}</div>
                                                 <div class="small taskRelativeUpdatedAt">
                                                     Updated at: {{relativeUpdatedAt}}
                                                 </div>
                                                 <div class="kanban-task-tags small">
-                                                    <span class="badge bg-info me-1">#{{eisenhowerStatusName}}</span>
+                                                    <span class="badge bg-warning me-1">#{{eisenhowerStatusName}}</span>
+
+                                                    {{#tags}}
+                                                        <span class="badge bg-info me-1">#{{.}}</span>
+                                                    {{/tags}}
                                                 </div>
                                             </div>
                                         {{/tasks}}
@@ -116,6 +124,7 @@
 </div> <!-- .wrapper -->
 
 {{> menu }}
+{{> task-body }}
 
 <script>
     $(document).ready(function () {
@@ -163,7 +172,7 @@
                     from: oldStatus,
                     to: newStatus
                 };
-                var result = ajaxCall('PATCH', "/boards/{{boardUID}}/tasks/" + taskUID + "/status", data);
+                var result = ajaxCall('PATCH', "/api/v1/boards/{{boardUID}}/tasks/" + taskUID + "/status", data);
 
                 if (result !== false) {
                     $(draggedItem).find('.taskRelativeUpdatedAt').text('Updated at: now');
@@ -175,12 +184,16 @@
             });
         });
 
-        function addTask(columnSelector, taskText, taskId) {
+        function addTask(columnSelector, taskText, taskUid, eisenhowerStatusColor, eisenhowerStatusName) {
             const newTask = $(`
-    <div class="kanban-item card mb-2 p-2 bg-secondary text-white"
-         draggable="true"
-         data-id="${taskId}">
-      ${taskText}
+    <div class="kanban-item card mb-2 p-2 text-white ${eisenhowerStatusColor}" draggable="true" data-uid="${taskUid}">
+        <div class="kanban-task-title fw-bold">${taskText}</div>
+        <div class="small taskRelativeUpdatedAt">
+            Updated at: now
+        </div>
+        <div class="kanban-task-tags small">
+            <span class="badge bg-info me-1">#${eisenhowerStatusName}</span>
+        </div>
     </div>
   `);
 
@@ -221,18 +234,11 @@
                 title: title,
                 eisenhowerStatus: eisenhowerStatus
             };
-            var result = ajaxCall('POST', "/boards/{{boardUID}}", data);
+            var result = ajaxCall('POST', "/api/v1/boards/{{boardUID}}", data);
 
             if (result !== false) {
-                addTask('#backlog-column', title, result.taskUid);
+                addTask('#backlog-column', title, result.taskUid, result.eisenhowerStatusColor, result.eisenhowerStatusName);
             }
-
-        });
-
-        $(".kanban-item").on('click', function (e) {
-
-            var taskUID = $(this).data('uid');
-            console.log("Clicked on task with UID: " + taskUID);
 
         });
 

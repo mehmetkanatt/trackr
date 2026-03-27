@@ -241,7 +241,7 @@ class BookModel
                             INNER JOIN author a ON ba.author_id = a.id
                            WHERE ba.book_id = b.id) AS author
                 FROM books b
-                WHERE uid = ";
+                WHERE uid = :uid";
 
         $stm = $this->dbConnection->prepare($sql);
         $stm->bindParam(':uid', $uid, \PDO::PARAM_STR);

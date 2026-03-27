@@ -63,7 +63,7 @@ services:
   trackr-typesense:
     image: typesense/typesense:27.0
     container_name: trackr-typesense
-    restart: on-failure
+    restart: always
     volumes:
       - typesense-data:/data
     command: '--data-dir /data --api-key=${TYPESENSE_API_KEY} --enable-cors'

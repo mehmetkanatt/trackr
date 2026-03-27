@@ -2,6 +2,7 @@
 
 namespace App\model;
 
+use App\util\TimeUtil;
 use App\util\UID;
 use Psr\Container\ContainerInterface;
 use App\exception\CustomException;
@@ -32,6 +33,7 @@ class BoardModel
         }
 
         while ($row = $stm->fetch(\PDO::FETCH_ASSOC)) {
+            $row['relativeCreatedAt'] = TimeUtil::relativeTime($row['created_at']);
             $boards[] = $row;
         }
 

@@ -447,7 +447,8 @@ class BookController extends Controller
             $this->bookModel->insertBookAuthor($bookId, $authorId);
         }
 
-        $authorAndBook = implode(', ', $authors) . ' - ' . $params['bookTitle'];
+        $tmpBook = $this->bookModel->getBookById($bookId);
+        $authorAndBook = $tmpBook['author'] . ' - ' . $tmpBook['title'];
 
         if ($params['own']) {
             $ownershipId = $this->bookModel->addToLibrary($bookId, $params['notes']);

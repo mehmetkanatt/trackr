@@ -64,8 +64,7 @@ class HighlightController extends Controller
             }
 
             $highlights = $this->highlightModel->getHighlightsByGivenField('id', $queryString['id'], $_ENV['HIGHLIGHT_LIMIT']);
-            $highlights[0]['expandable'] = false;
-            $highlights[0]['expandableClass'] = '';
+
         } elseif (isset($queryString['bookUID'])) {
             $book = $this->bookModel->getBookByGivenColumn('uid', $queryString['bookUID']);
             $bookId = $book['id'];
@@ -98,6 +97,11 @@ class HighlightController extends Controller
             $data['searchParam'] = htmlspecialchars($searchParam, ENT_QUOTES | ENT_HTML401, "UTF-8");
         } else {
             $highlights = $this->highlightModel->getHighlights($_ENV['HIGHLIGHT_LIMIT']);
+        }
+
+        if (count($highlights) === 1) {
+            $highlights[0]['expandable'] = false;
+            $highlights[0]['expandableClass'] = '';
         }
 
         $books = $_SESSION['books']['list'] ?? $this->bookModel->getAuthorBookList();

@@ -167,7 +167,14 @@ class LogController extends Controller
         ];
 
         if ($todaysLog) {
-            $this->highlightModel->updateOperations($todaysLog['log_hid'], $highlightParams);
+
+            if ($todaysLog['log_hid']) {
+                $this->highlightModel->updateOperations($todaysLog['log_hid'], $highlightParams);
+            } else {
+                $highlightId = $this->highlightModel->createOperations($highlightParams);
+                $this->logModel->update($today, $highlightId);
+            }
+
         } else {
             // while saving the log, date might change
             $highlightId = $this->highlightModel->createOperations($highlightParams);

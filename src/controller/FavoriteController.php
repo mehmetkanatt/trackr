@@ -48,7 +48,7 @@ class FavoriteController extends Controller
             }
 
             $this->favoriteModel->add($type, $params['id']);
-            $resource['message'] = "Successfully added";
+            $resource['message'] = "Successfully favorited";
             $resource['responseCode'] = StatusCode::HTTP_OK;
         } else {
             $resource['message'] = "Required fields cannot be null";

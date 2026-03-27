@@ -603,16 +603,6 @@ class BookController extends Controller
         return $this->response($resource['responseCode'], $resource);
     }
 
-    public function getBookGraphicData(ServerRequestInterface $request, ResponseInterface $response)
-    {
-        $graphicDatas = $this->bookModel->getBooksGraphicData(30);
-
-        $resource['data'] = $graphicDatas;
-        $resource['responseCode'] = StatusCode::HTTP_OK;
-
-        return $this->response($resource['responseCode'], $resource);
-    }
-
     public function getLibraries(ServerRequestInterface $request, ResponseInterface $response)
     {
         $books = [];

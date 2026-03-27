@@ -5,6 +5,7 @@
     {{> head }}
     <link rel="stylesheet" href="/css/simplemde-theme-dark.min.css">
     <link rel="stylesheet" href="/css/version-diff.css">
+    <link rel="stylesheet" href="/css/highlightjs/default.min.css">
     <link rel="stylesheet" href="/css/markdown.css">
     <style>
         img {
@@ -73,6 +74,7 @@
 {{> menu }}
 {{> log-versions }}
 <script src="/js/simplemde.min.js"></script>
+<script src="/js/highlight.min.js"></script>
 <script src="/js/codemirror-4.inline-attachment.min.js"></script>
 
 <script>
@@ -91,6 +93,8 @@
         inlineAttachment.editors.codemirror4.attach(simplemde.codemirror, {
             uploadUrl: '/images'
         });
+
+        hljs.highlightAll();
 
         $(document).keydown(function (event) {
             if ((event.metaKey || event.ctrlKey) && event.which === 83) {

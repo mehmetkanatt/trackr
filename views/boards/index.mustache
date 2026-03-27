@@ -45,8 +45,17 @@
                                 <div class="card-header bg-dark">
                                     {{title}}
                                 </div>
+
                                 <div class="card-body">
-                                    {{description}}
+                                    {{#description}}
+                                        <p class="card-text"><small class="text-muted">{{description}}</small></p>
+                                    {{/description}}
+
+                                    {{^description}}
+                                        <p class="card-text"><small class="text-muted">No description</small></p>
+                                    {{/description}}
+
+                                    <p class="card-text"><small class="text-muted">Created at {{relativeCreatedAt}}</small></p>
                                 </div>
                                 <div class="card-footer">
                                     <a href="/boards/{{uid}}" class="btn btn-primary btn-sm">Go to board</a>

@@ -64,11 +64,14 @@
                     {{#randomHighlight}}
                         <h2>Random Highlight:</h2>
                         <div class="card highlightCard">
-                            <div class="card-body">
+                            <div class="card-header">
                                 <a role="button" href="/highlights/{{id}}/details"
                                    class="badge badge-primary float-right"><span
                                         class="fe fe-edit fe-8"></span></a>
-                                <br>
+
+                                <strong><a href="/highlights?id={{id}}" target="_blank">#{{id}}</a> {{#blog_path}}{{blog_path}}{{/blog_path}}</strong>
+                            </div>
+                            <div class="card-body">
                                 {{{highlight}}}
 
                                 <footer class="blockquote-footer">

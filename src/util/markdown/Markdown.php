@@ -22,6 +22,8 @@ class Markdown
     public function __construct()
     {
         $config = [
+            'html_input' => 'escape', // 'strip' to remove tags, 'allow' to allow all HTML
+            'allow_unsafe_links' => false,
             'mentions' => [
                 'highlight_id' => [
                     'prefix' => '#',

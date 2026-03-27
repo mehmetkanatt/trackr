@@ -65,6 +65,20 @@
             uploadUrl: '/images'
         });
 
+        $(document).on('keydown', function (e) {
+            if (e.metaKey && e.keyCode === 13) {
+                var highlight = simplemde.value();
+                var tags = $('#tags').val();
+                var data = "highlight=" + encodeURIComponent(highlight) + "&tags=" + encodeURIComponent(tags);
+                var result = ajaxCall('POST', "/bookmarks/{{bookmarkUID}}/highlights", data)
+
+                if (result !== false) {
+                    unsavedChanges = false;
+                    location.reload();
+                }
+            }
+        });
+
         $('.enterButtonKeyPress').bind('keypress', function (e) {
             if (e.keyCode == 13) {
                 var highlight = simplemde.value();

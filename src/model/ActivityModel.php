@@ -106,6 +106,15 @@ class ActivityModel
         return $this->create($source, $sourceId, $activity, $createdAt);
     }
 
+    public function logFinishedBook($pathName, $authorAndBook, $sourceId, $createdAt = null)
+    {
+        // Old: addActivityLog($booksFinishedDetails['pathName'], $booksFinishedDetails['book_id'], "rated {$params['rate']}");
+        $source = ActivityLogSources::BOOKS_FINISHED->value;
+        $activity = "[$pathName] Finished '$authorAndBook'";
+
+        return $this->create($source, $sourceId, $activity, $createdAt);
+    }
+
     public function logCreateNewAuthor($author, $sourceId, $createdAt = null)
     {
         // Old: addActivityLog(null, null, "add new author: $author");

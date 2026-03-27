@@ -902,7 +902,8 @@ class BookModel
                                WHERE ba.book_id = b.id)) AS author,
                        (SELECT sum(amount)
                         FROM book_trackings
-                        WHERE book_id = b.id AND path_id = :path_id AND user_id = :user_id) AS readAmount
+                        WHERE book_id = b.id AND path_id = :path_id AND user_id = :user_id) AS readAmount,
+                        p.name AS pathName
                 FROM books b
                          INNER JOIN path_books pb ON b.id = pb.book_id
                          INNER JOIN paths p ON pb.path_id = p.id
@@ -952,6 +953,9 @@ class BookModel
 
             if ($pageCount != 0 && $diff <= 0) {
                 $this->insertNewReadRecord($row['path_id'], $row['id']);
+                $authorAndBookTitle = $row['author'] . ' - ' . $row['title'];
+                $this->activityModel->logFinishedBook($row['pathName'], $authorAndBookTitle, $row['id']);
+
                 $this->changePathBookStatus($row['path_id'], $row['id'], BookStatus::DONE->value);
 
                 if ($row['is_complete_book']) {

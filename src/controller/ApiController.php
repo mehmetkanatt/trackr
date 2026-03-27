@@ -151,7 +151,7 @@ class ApiController extends Controller
             "message" => lang\En::HIGHLIGHT_SUCCESSFULLY_ADDED
         ];
 
-        return $this->response(StatusCode::HTTP_OK, $resource);
+        return $this->response(StatusCode::HTTP_CREATED, $resource);
     }
 
 }

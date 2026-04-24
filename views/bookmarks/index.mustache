@@ -104,10 +104,12 @@
                                                    data-toggle="tooltip" data-placement="top" title="{{{toolTip}}}">
                                                     {{{title}}}
 
-                                                    <a class="btn btn-sm btnDeleteBookmark2 float-right"
-                                                       data-uid="{{bookmarkUID}}">
-                                                        <i class="fe fe-trash fe-4"></i>
-                                                    </a>
+                                                    {{#isContentExist}}
+                                                        <a class="btn btn-sm float-right" target="_blank"
+                                                           href="/bookmarks/{{bookmarkUID}}/content">
+                                                            <i class="fe fe-external-link fe-4"></i>
+                                                        </a>
+                                                    {{/isContentExist}}
 
                                                     {{#imploded_tags}}
                                                         <span class="badge badge-pill badge-warning float-right">{{imploded_tags}}</span>
@@ -247,16 +249,6 @@
 
             if (result !== false) {
                 location.reload();
-            }
-        });
-
-        $(".btnDeleteBookmark2").on('click', function (e) {
-            var uid = $(this).data('uid');
-            var result = ajaxCall('DELETE', "/bookmarks/" + uid, null);
-            if (result !== false) {
-                $("#bookmarksDatatable").on("click", ".btnDeleteBookmark2", function () {
-                    $(this).closest("tr").remove();
-                });
             }
         });
 

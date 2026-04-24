@@ -40,6 +40,7 @@ class BookmarkModel
                        b.note AS parentNote,
                        bo.description AS childDescription,
                        b.description AS parentDescription,
+                       b.html_content,
                        bo.status,
                        bo.created,
                        bo.started,
@@ -78,9 +79,14 @@ class BookmarkModel
         while ($row = $stm->fetch(\PDO::FETCH_ASSOC)) {
 
             $row['toolTip'] = '';
+            $row['isContentExist'] = false;
 
             if (!$row['title']) {
                 $row['title'] = $row['bookmark'];
+            }
+
+            if ($row['html_content']) {
+                $row['isContentExist'] = true;
             }
 
             if (strlen($row['title']) > 75) {
@@ -286,7 +292,7 @@ class BookmarkModel
     {
         $list = [];
 
-        $sql = 'SELECT b.id, b.uid, b.bookmark, IF(ISNULL(bo.title), b.title, bo.title) AS title, bo.note, bo.status, h.highlight, h.author, h.source
+        $sql = 'SELECT b.id, b.uid, b.bookmark, IF(ISNULL(bo.title), b.title, bo.title) AS title, b.html_content, bo.note, bo.status, h.highlight, h.author, h.source
                 FROM bookmarks b
                 LEFT JOIN highlights h ON b.id = h.link
                 INNER JOIN bookmarks_ownership bo on b.id = bo.bookmark_id
@@ -494,12 +500,13 @@ class BookmarkModel
     public function updateParentBookmark($bookmarkID, $details)
     {
         $sql = 'UPDATE bookmarks
-                SET site_name = :site_name, title = :title, description = :description, site_type = :site_type, thumbnail = :thumbnail
+                SET site_name = :site_name, title = :title, html_content = :html_content, description = :description, site_type = :site_type, thumbnail = :thumbnail, keyword = :keywords
                 WHERE id = :bookmark_id';
 
         $stm = $this->dbConnection->prepare($sql);
         $stm->bindParam(':site_name', $details['site_name'], \PDO::PARAM_STR);
         $stm->bindParam(':title', $details['title'], \PDO::PARAM_STR);
+        $stm->bindParam(':html_content', $details['content'], \PDO::PARAM_STR);
         $stm->bindParam(':site_type', $details['site_type'], \PDO::PARAM_STR);
         $stm->bindParam(':description', $details['description'], \PDO::PARAM_STR);
         $stm->bindParam(':thumbnail', $details['thumbnail'], \PDO::PARAM_STR);

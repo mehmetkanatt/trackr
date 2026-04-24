@@ -77,7 +77,7 @@ class ApiController extends Controller
             $this->bookmarkModel->updateParentBookmarkTitleByID($bookmarkID, $title);
         } else {
             $rabbitmq = new AmqpJobPublisher();
-            $rabbitmq->publishJob(JobTypes::GET_PARENT_BOOKMARK_TITLE, [
+            $rabbitmq->publishJob(JobTypes::GET_BOOKMARK_DETAILS_USING_CLOUDFLARE_CRAWLER, [
                 'id' => $bookmarkID,
                 'retry_count' => 0,
                 'user_id' => $_SESSION['userInfos']['user_id']

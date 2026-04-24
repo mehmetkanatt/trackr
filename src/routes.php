@@ -77,6 +77,7 @@ $app->group('', function () {
     $this->put('/bookmarks/{uid}/status', BookmarkController::class . ':changeStatus');
     $this->put('/bookmarks/{uid}/title', BookmarkController::class . ':updateTitle');
     $this->get('/bookmarks/{uid}', BookmarkController::class . ':details');
+    $this->get('/bookmarks/{uid}/content', BookmarkController::class . ':content');
     $this->put('/bookmarks/{uid}', BookmarkController::class . ':update');
     $this->delete('/bookmarks/{uid}', BookmarkController::class . ':delete');
 
@@ -104,6 +105,7 @@ $app->group('', function () {
     $this->get('/chains/{uid}/graphic', ChainController::class . ':getChainGraphicData');
 
     $this->post('/images', ImageController::class . ':upload');
+    $this->get('/images', ImageController::class . ':index');
 
     $this->get('/logout', AuthController::class . ':logout');
 

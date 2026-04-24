@@ -95,6 +95,23 @@ class BookmarkController extends Controller
         return $this->view->render($response, 'bookmarks/details.mustache', $data);
     }
 
+    public function content(ServerRequestInterface $request, ResponseInterface $response, $args)
+    {
+        $bookmarkUid = $args['uid'];
+        $bookmark = $this->bookmarkModel->getBookmarkByUid($bookmarkUid);
+
+        $data = [
+            'pageTitle' => 'Bookmark\'s Content | trackr',
+            'content' => [
+                'html' => $bookmark['html_content'],
+                'title' => $bookmark['title'],
+            ],
+            'activeBookmarks' => 'active',
+        ];
+
+        return $this->view->render($response, 'bookmarks/content.mustache', $data);
+    }
+
     public function create(ServerRequestInterface $request, ResponseInterface $response)
     {
         $rabbitmq = new AmqpJobPublisher();
@@ -130,7 +147,7 @@ class BookmarkController extends Controller
             $this->tagModel->updateSourceTags($params['tags'], $bookmarkID, Sources::BOOKMARK->value);
         }
 
-        $rabbitmq->publishJob(JobTypes::GET_PARENT_BOOKMARK_TITLE, [
+        $rabbitmq->publishJob(JobTypes::GET_BOOKMARK_DETAILS_USING_CLOUDFLARE_CRAWLER, [
             'id' => $bookmarkID,
             'retry_count' => 0,
             'user_id' => $_SESSION['userInfos']['user_id']

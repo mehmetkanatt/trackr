@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+    {{> head }}
+</head>
+<body class="vertical dark">
+<div class="wrapper">
+    {{> include}}
+    <nav class="topnav navbar navbar-light">
+        {{> navbar }}
+    </nav>
+    <main role="main" class="main-content">
+        <div class="container-fluid">
+            <div class="row justify-content-center">
+                <div class="col-12">
+
+                    <h6 class="mb-3">Images</h6>
+
+                    <div class="row my-4 pb-4">
+                        {{#images}}
+                        <div class="col-md-3">
+                            <div class="card shadow text-center mb-4">
+                                <div class="card-body file">
+                                    <div class="file-action">
+                                        <button type="button" class="btn btn-link dropdown-toggle more-vertical p-0 text-muted mx-auto" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            <span class="text-muted sr-only">Action</span>
+                                        </button>
+                                        <div class="dropdown-menu m-2">
+                                            <a class="dropdown-item" href="#"><i class="fe fe-chevrons-right fe-12 mr-4"></i>Move</a>
+                                            <a class="dropdown-item" href="#"><i class="fe fe-copy fe-12 mr-4"></i>Copy</a>
+                                            <a class="dropdown-item" href="#"><i class="fe fe-edit-3 fe-12 mr-4"></i>Rename</a>
+                                            <a class="dropdown-item" href="#"><i class="fe fe-delete fe-12 mr-4"></i>Delete</a>
+                                            <a class="dropdown-item" href="#"><i class="fe fe-share fe-12 mr-4"></i>Share</a>
+                                            <a class="dropdown-item" href="#"><i class="fe fe-download fe-12 mr-4"></i>Download</a>
+                                        </div>
+                                    </div>
+                                    <div class="card border-0 bg-transparent">
+                                        <img src="/img/{{filename}}" alt="..." class="card-img-top img-fluid rounded">
+                                    </div> <!-- .card -->
+                                    <div class="file-info">
+                                        <span class="badge badge-light text-muted mr-2">{{relativeCreatedAt}}</span>
+                                    </div>
+                                </div> <!-- .card-body -->
+                                <div class="card-footer bg-transparent border-0 fname">
+                                    <strong>/img/{{filename}}</strong>
+                                </div> <!-- .card-footer -->
+                            </div> <!-- .card -->
+                        </div> <!-- .col -->
+                        {{/images}}
+                    </div> <!-- .row -->
+
+                </div> <!-- .col-12 -->
+            </div> <!-- .row -->
+        </div> <!-- .container-fluid -->
+    </main> <!-- main -->
+</div> <!-- .wrapper -->
+
+{{> menu }}
+
+<script>
+    $(document).ready(function () {
+
+        $("#btnCreateNewBoard").on('click', function (e) {
+
+            var data = {
+                title: $('#title').val(),
+                description: $('#description').val()
+            };
+
+            var result = ajaxCall('POST', "/api/v1/boards", data)
+
+            if (result !== false) {
+                location.reload();
+            }
+
+        });
+
+    });
+</script>
+</body>
+</html>

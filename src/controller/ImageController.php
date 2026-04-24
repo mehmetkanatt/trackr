@@ -18,6 +18,19 @@ class ImageController extends Controller
         $this->imageModel = new ImageModel($container);
     }
 
+    public function index(ServerRequestInterface $request, ResponseInterface $response)
+    {
+        $images = $this->imageModel->getImages();
+
+        $data = [
+            'pageTitle' => 'Images | trackr',
+            'images' => $images,
+            'activeImages' => 'active'
+        ];
+
+        return $this->view->render($response, 'images/index.mustache', $data);
+    }
+
     public function upload(ServerRequestInterface $request, ResponseInterface $response)
     {
         $directory = $_SERVER['DOCUMENT_ROOT'] . '/img'; // public/img

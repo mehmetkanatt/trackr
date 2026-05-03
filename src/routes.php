@@ -25,7 +25,7 @@ $app->group('/api', function () {
     $this->post('/bookmarks', ApiController::class . ':addBookmark');
     $this->post('/highlights', ApiController::class . ':addHighlight');
     $this->post('/books', BookController::class . ':saveBook');
-    $this->put('/bookmarks/{uid}/title', BookmarkController::class . ':updateTitle');
+    $this->put('/bookmarks/{uid}/refresh', BookmarkController::class . ':refresh');
 })->add(new Middleware\Authorization($container));
 
 $app->group('', function () {
@@ -75,7 +75,7 @@ $app->group('', function () {
     $this->post('/bookmarks/{uid}/highlights', BookmarkController::class . ':addHighlight');
     $this->post('/bookmarks', BookmarkController::class . ':create');
     $this->put('/bookmarks/{uid}/status', BookmarkController::class . ':changeStatus');
-    $this->put('/bookmarks/{uid}/title', BookmarkController::class . ':updateTitle');
+    $this->put('/bookmarks/{uid}/refresh', BookmarkController::class . ':refresh');
     $this->get('/bookmarks/{uid}', BookmarkController::class . ':details');
     $this->get('/bookmarks/{uid}/content', BookmarkController::class . ':content');
     $this->put('/bookmarks/{uid}', BookmarkController::class . ':update');

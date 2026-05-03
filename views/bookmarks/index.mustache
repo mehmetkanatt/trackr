@@ -128,8 +128,8 @@
                                                 <div class="dropdown-menu dropdown-menu-right">
                                                     <a class="dropdown-item"
                                                        href="/bookmarks/{{bookmarkUID}}/highlights">Highlights</a>
-                                                    <a class="dropdown-item btnUpdateTitle"
-                                                       data-uid="{{bookmarkUID}}">Update Title
+                                                    <a class="dropdown-item btnRefresh"
+                                                       data-uid="{{bookmarkUID}}">Refresh
                                                     </a>
                                                     <a class="dropdown-item"
                                                        href="/bookmarks/{{bookmarkUID}}">Edit</a>
@@ -252,9 +252,9 @@
             }
         });
 
-        $(".btnUpdateTitle").on('click', function (e) {
+        $(".btnRefresh").on('click', function (e) {
             var uid = $(this).data('uid');
-            ajaxCall('PUT', "/bookmarks/" + uid + "/title", null)
+            ajaxCall('PUT', "/bookmarks/" + uid + "/refresh", null)
         });
 
 

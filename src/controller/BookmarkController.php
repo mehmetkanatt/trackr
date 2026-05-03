@@ -364,20 +364,20 @@ class BookmarkController extends Controller
         return $this->response(StatusCode::HTTP_OK, $resource);
     }
 
-    public function updateTitle(ServerRequestInterface $request, ResponseInterface $response, $args)
+    public function refresh(ServerRequestInterface $request, ResponseInterface $response, $args)
     {
         $rabbitmq = new AmqpJobPublisher();
         $bookmarkUid = $args['uid'];
         $bookmarkId = $this->bookmarkModel->getBookmarkIdByUid($bookmarkUid);
 
-        $rabbitmq->publishJob(JobTypes::GET_CHILD_BOOKMARK_TITLE, [
+        $rabbitmq->publishJob(JobTypes::GET_BOOKMARK_DETAILS_USING_CLOUDFLARE_CRAWLER, [
             'id' => $bookmarkId,
             'retry_count' => 0,
             'user_id' => $_SESSION['userInfos']['user_id']
         ]);
 
         $resource = [
-            "message" => "Title update request added to queue!"
+            "message" => "Refresh request added to queue!"
         ];
 
         return $this->response(StatusCode::HTTP_OK, $resource);

@@ -3,10 +3,10 @@
 
 <head>
     {{> head }}
-    <link rel="stylesheet" href="/css/simplemde-theme-dark.min.css">
     <link rel="stylesheet" href="/css/version-diff.css">
     <link rel="stylesheet" href="/css/highlightjs/default.min.css">
     <link rel="stylesheet" href="/css/markdown.css">
+    <link rel="stylesheet" href="/css/editor.css">
 
     <style>
         .clamp {
@@ -43,6 +43,8 @@
 
                                 <h5 class="card-title">Add New Highlight</h5>
                                 <textarea id="highlight" hidden></textarea>
+
+                                <br>
 
                                 <div class="input-group input-group-md">
 
@@ -149,14 +151,19 @@
 {{> menu }}
 {{> highlight-versions }}
 
-<script src="/js/simplemde.min.js"></script>
 <script src="/js/highlight.min.js"></script>
 <script src="/js/jquery.lazy.min.js"></script>
 <script src="/js/jquery.lazy.plugins.min.js"></script>
-<script src="/js/codemirror-4.inline-attachment.min.js"></script>
+<script src="/js/editor.js"></script>
 
 <script>
     $(document).ready(function () {
+
+        var editor = new Editor({
+            element: document.getElementById("highlight"),
+            autofocus: true,
+            uploadEndpoint: "/images"
+        });
 
         $(document).on('click', '.toggleCard', function() {
             let body = $(this).closest('.card').find('.card-body');
@@ -170,7 +177,6 @@
             }
         });
 
-        var unsavedChanges = false;
         $('.highlightToolTip').tooltip({
             trigger: 'manual' // Disable automatic trigger
         });
@@ -244,17 +250,6 @@
 
         hljs.highlightAll();
 
-        var simplemde = new SimpleMDE({
-            element: $("#highlight")[0],
-            toolbar: ["bold", "italic", "strikethrough", "heading", "code", "quote", "unordered-list", "ordered-list", "clean-block", "link", "image", "table", "horizontal-rule", "preview"],
-            insertTexts: {"image": ["![", "](/img/)"]},
-            autofocus: true
-        });
-
-        inlineAttachment.editors.codemirror4.attach(simplemde.codemirror, {
-            uploadUrl: '/images'
-        });
-
         $('#searchHighlights').bind('keypress', function (e) {
             if (e.keyCode == 13) {
 
@@ -311,23 +306,13 @@
 
         });
 
-        simplemde.codemirror.on("change", function () {
-            unsavedChanges = true;
-        });
-
-        window.addEventListener("beforeunload", function (event) {
-            if (unsavedChanges) {
-                event.preventDefault();
-            }
-        });
-
         var saveHighlight = function () {
             $.bootstrapPurr('running duplicate highlight control', {
                 type: 'warning',
                 delay: 1000
             });
 
-            var highlight = simplemde.value();
+            var highlight = editor.value();
             var author = $('#author').val() || "";
             var source = $('#source').val() || "";
             var page = $('#page').val();
@@ -351,7 +336,7 @@
             var result = ajaxCall('POST', "/highlights", data)
 
             if (result !== false) {
-                unsavedChanges = false;
+                editor.markSaved()
                 location.reload();
             }
         }

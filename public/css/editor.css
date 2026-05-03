@@ -1,0 +1,926 @@
+/* ============================================================
+   Editor — Notion-inspired Markdown Editor
+   editor.css
+   ============================================================ */
+
+/* ── Custom Properties ─────────────────────────────────────── */
+:root {
+  --smd-font-ui:      'DM Sans', 'Segoe UI', system-ui, sans-serif;
+  --smd-font-mono:    'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --smd-font-prose:   'Lora', Georgia, 'Times New Roman', serif;
+
+  --smd-bg:           #ffffff;
+  --smd-bg-toolbar:   #f5f5f5;
+  --smd-bg-hover:     #ebebeb;
+  --smd-bg-active:    #e0e0e0;
+  --smd-bg-preview:   #fafafa;
+  --smd-bg-code:      #f0f0f0;
+  --smd-bg-drag:      #e8f0fe;
+
+  --smd-border:       #d8d8d8;
+  --smd-border-focus: #999999;
+  --smd-border-drag:  #93c5fd;
+
+  --smd-text:         #1a1a1a;
+  --smd-text-muted:   #666666;
+  --smd-text-subtle:  #999999;
+
+  --smd-accent:       #4a90d9;
+  --smd-accent-light: #dbeafe;
+
+  --smd-warn:         #f59e0b;
+  --smd-warn-bg:      #fffbeb;
+  --smd-warn-border:  #fcd34d;
+
+  --smd-radius:       8px;
+  --smd-radius-sm:    6px;
+  --smd-radius-xs:    4px;
+
+  --smd-shadow:       0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --smd-shadow-md:    0 4px 16px rgba(0,0,0,.08), 0 1px 4px rgba(0,0,0,.04);
+
+  --smd-transition:   140ms ease;
+}
+
+/* ── Dark Mode — matches the app's #2a2a2a / #333 palette ──── */
+.smd-wrapper.smd-dark {
+  --smd-bg:           #2a2a2a;
+  --smd-bg-toolbar:   #222222;
+  --smd-bg-hover:     #333333;
+  --smd-bg-active:    #3a3a3a;
+  --smd-bg-preview:   #252525;
+  --smd-bg-code:      #303030;
+  --smd-bg-drag:      #1e2d40;
+
+  --smd-border:       #3d3d3d;
+  --smd-border-focus: #606060;
+  --smd-border-drag:  #4a90d9;
+
+  --smd-text:         #d4d4d4;
+  --smd-text-muted:   #888888;
+  --smd-text-subtle:  #555555;
+
+  --smd-accent:       #4a90d9;
+  --smd-accent-light: #1e3a5f;
+
+  --smd-warn:         #f59e0b;
+  --smd-warn-bg:      #2a2210;
+  --smd-warn-border:  #78450a;
+
+  --smd-shadow:       0 1px 3px rgba(0,0,0,.4),  0 1px 2px rgba(0,0,0,.3);
+  --smd-shadow-md:    0 4px 20px rgba(0,0,0,.5), 0 2px 6px rgba(0,0,0,.4);
+}
+
+/* Dark: code blocks */
+.smd-wrapper.smd-dark .smd-preview pre,
+.smd-wrapper.smd-dark .smd-block[data-type="code"] .smd-block-content,
+.smd-wrapper.smd-dark .smd-block[data-type="code-inner"] .smd-block-content {
+  background: #111111;
+  color: #c9d1d9;
+}
+
+/* Dark: inline code */
+.smd-wrapper.smd-dark .smd-preview code {
+  background: #333333;
+  border-color: #444444;
+  color: #e06c75;
+}
+
+/* Dark: blockquote border */
+.smd-wrapper.smd-dark .smd-preview blockquote {
+  border-left-color: #4a90d9;
+  background: #303030;
+  color: #888888;
+}
+
+/* Dark: table header */
+.smd-wrapper.smd-dark .smd-preview th {
+  background: #222222;
+}
+
+/* Dark: even table rows */
+.smd-wrapper.smd-dark .smd-preview tr:nth-child(even) td {
+  background: #303030;
+}
+
+/* Dark: ghost during drag */
+.smd-wrapper.smd-dark .smd-block-ghost {
+  background: #2a2a2a;
+  border-color: #444444;
+  box-shadow: 0 12px 32px rgba(0,0,0,.6);
+}
+
+/* Dark: tooltip */
+.smd-wrapper.smd-dark .smd-toolbar-btn[title]:hover::after {
+  background: #d4d4d4;
+  color: #1a1a1a;
+}
+
+/* Smooth theme transition on the wrapper and all its children */
+.smd-wrapper,
+.smd-wrapper * {
+  transition:
+    background-color 200ms ease,
+    border-color     200ms ease,
+    color            200ms ease,
+    box-shadow       200ms ease;
+}
+
+/* But don't slow down interactive states */
+.smd-wrapper .smd-toolbar-btn,
+.smd-wrapper .smd-block-add,
+.smd-wrapper .smd-block-drag {
+  transition:
+    background-color 140ms ease,
+    color            140ms ease;
+}
+
+/* ── Wrapper ────────────────────────────────────────────────── */
+.smd-wrapper {
+  font-family: var(--smd-font-ui);
+  background: var(--smd-bg);
+  border: 1.5px solid var(--smd-border);
+  border-radius: var(--smd-radius);
+  box-shadow: var(--smd-shadow);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: border-color var(--smd-transition), box-shadow var(--smd-transition);
+  position: relative;
+}
+
+.smd-wrapper:focus-within {
+  border-color: var(--smd-border-focus);
+  box-shadow: var(--smd-shadow-md);
+}
+
+/* ── Toolbar ────────────────────────────────────────────────── */
+.smd-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 6px 10px;
+  background: var(--smd-bg-toolbar);
+  border-bottom: 1px solid var(--smd-border);
+  user-select: none;
+}
+
+.smd-toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: transparent;
+  border-radius: var(--smd-radius-xs);
+  cursor: pointer;
+  color: var(--smd-text-muted);
+  font-size: 13px;
+  font-family: var(--smd-font-ui);
+  font-weight: 600;
+  padding: 0;
+  transition: background var(--smd-transition), color var(--smd-transition);
+  position: relative;
+}
+
+.smd-toolbar-btn svg {
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+}
+
+.smd-toolbar-btn:hover {
+  background: var(--smd-bg-hover);
+  color: var(--smd-text);
+}
+
+.smd-toolbar-btn:active,
+.smd-toolbar-btn.smd-active {
+  background: var(--smd-bg-active);
+  color: var(--smd-text);
+}
+
+/* Clear editor button — subtle danger color on hover */
+.smd-toolbar-btn[data-action="clear-editor"] {
+  color: var(--smd-text-subtle);
+}
+
+.smd-toolbar-btn[data-action="clear-editor"]:hover {
+  background: rgba(239, 68, 68, .12);
+  color: #ef4444;
+}
+
+.smd-toolbar-btn[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--smd-text);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  padding: 3px 8px;
+  border-radius: var(--smd-radius-xs);
+  pointer-events: none;
+  z-index: 100;
+  letter-spacing: .01em;
+}
+
+.smd-toolbar-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--smd-border);
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+/* Pushes the unsaved badge to the far right */
+.smd-toolbar-spacer {
+  flex: 1;
+}
+
+/* Toolbar unsaved changes badge */
+.smd-toolbar-unsaved {
+  display: none;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--smd-font-ui);
+  color: var(--smd-warn);
+  white-space: nowrap;
+  padding: 2px 8px 2px 6px;
+  border-radius: 20px;
+  background: var(--smd-warn-bg);
+  border: 1px solid var(--smd-warn-border);
+  animation: smd-pulse 2s ease infinite;
+  letter-spacing: .01em;
+}
+
+.smd-toolbar-unsaved.visible {
+  display: flex;
+}
+
+.smd-toolbar-unsaved svg {
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+}
+
+/* ── Editor Body ────────────────────────────────────────────── */
+.smd-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+/* ── Contenteditable Pane ───────────────────────────────────── */
+.smd-editor {
+  flex: 1;
+  min-height: 280px;
+  padding: 8px 0;
+  outline: none;
+  overflow-y: auto;
+  background: var(--smd-bg);
+  box-sizing: border-box;
+  /* Block children handle their own horizontal padding */
+  cursor: text;
+}
+
+/* Drag-over state */
+.smd-wrapper.smd-drag-over .smd-editor {
+  background: var(--smd-bg-drag);
+}
+
+.smd-wrapper.smd-drag-over {
+  border-color: var(--smd-border-drag);
+  box-shadow: 0 0 0 3px rgba(147,197,253,.25);
+}
+
+.smd-drag-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  align-items: center;
+  justify-content: center;
+  background: rgba(239,246,255,.85);
+  border-radius: calc(var(--smd-radius) - 1.5px);
+  backdrop-filter: blur(2px);
+}
+
+.smd-wrapper.smd-drag-over .smd-drag-overlay {
+  display: flex;
+}
+
+.smd-drag-overlay-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: var(--smd-accent);
+  font-size: 14px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.smd-drag-overlay-inner svg {
+  width: 40px;
+  height: 40px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  animation: smd-bounce .6s ease infinite alternate;
+}
+
+@keyframes smd-bounce {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-6px); }
+}
+
+/* ── Upload progress ────────────────────────────────────────── */
+.smd-upload-progress {
+  position: absolute;
+  bottom: 12px;
+  right: 16px;
+  background: var(--smd-text);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: 20px;
+  z-index: 60;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity .2s, transform .2s;
+  pointer-events: none;
+}
+
+.smd-upload-progress.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Preview Pane ───────────────────────────────────────────── */
+.smd-preview {
+  display: none;
+  flex: 1;
+  min-height: 280px;
+  padding: 16px 28px 20px 60px;  /* left matches gutter width */
+  overflow-y: auto;
+  background: var(--smd-bg-preview);
+  border-left: 1px solid var(--smd-border);
+  box-sizing: border-box;
+  animation: smd-fadein .15s ease;
+}
+
+@keyframes smd-fadein {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.smd-preview-only .smd-editor { display: none; }
+.smd-preview-only .smd-preview {
+  display: block;
+  border-left: none;
+  flex: 1;
+}
+.smd-preview-split .smd-preview { display: block; }
+.smd-preview-split .smd-editor  { border-right: 1px solid var(--smd-border); }
+
+/* ── Preview Typography ─────────────────────────────────────── */
+.smd-preview {
+  font-family: var(--smd-font-prose);
+  font-size: 15.5px;
+  line-height: 1.8;
+  color: var(--smd-text);
+}
+
+.smd-preview h1,
+.smd-preview h2,
+.smd-preview h3,
+.smd-preview h4,
+.smd-preview h5,
+.smd-preview h6 {
+  font-family: var(--smd-font-ui);
+  font-weight: 700;
+  color: var(--smd-text);
+  margin: 1.4em 0 .5em;
+  line-height: 1.3;
+  letter-spacing: -.02em;
+}
+
+.smd-preview h1 { font-size: 2em; }
+.smd-preview h2 { font-size: 1.5em; }
+.smd-preview h3 { font-size: 1.25em; }
+.smd-preview h4 { font-size: 1.1em; }
+.smd-preview h5, .smd-preview h6 { font-size: 1em; }
+
+.smd-preview p  { margin: 0 0 .9em; }
+.smd-preview ul, .smd-preview ol { padding-left: 1.5em; margin: 0 0 .9em; }
+.smd-preview li { margin: 0; padding: .1em 0; line-height: 1.65; }
+.smd-preview li p { margin: 0; }
+
+.smd-preview blockquote {
+  margin: 1em 0;
+  padding: .6em 1em .6em 1.2em;
+  border-left: 3.5px solid var(--smd-border-focus);
+  background: var(--smd-bg-code);
+  border-radius: 0 var(--smd-radius-xs) var(--smd-radius-xs) 0;
+  color: var(--smd-text-muted);
+  font-style: italic;
+}
+
+.smd-preview code {
+  font-family: var(--smd-font-mono);
+  font-size: .85em;
+  background: var(--smd-bg-code);
+  padding: .15em .4em;
+  border-radius: var(--smd-radius-xs);
+  border: 1px solid var(--smd-border);
+  color: #c0392b;
+}
+
+.smd-preview pre {
+  background: #1e1e2e;
+  color: #cdd6f4;
+  border-radius: var(--smd-radius-sm);
+  padding: 1.1em 1.3em;
+  overflow-x: auto;
+  margin: 1em 0;
+  box-shadow: inset 0 1px 4px rgba(0,0,0,.2);
+}
+
+.smd-preview pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font-size: .875em;
+  line-height: 1.65;
+  border-radius: 0;
+}
+
+.smd-preview a {
+  color: var(--smd-accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+.smd-preview a:hover { text-decoration: none; }
+
+.smd-preview img {
+  max-width: 100%;
+  border-radius: var(--smd-radius-sm);
+  margin: .5em 0;
+  box-shadow: var(--smd-shadow-md);
+}
+
+.smd-preview hr {
+  border: none;
+  border-top: 1.5px solid var(--smd-border);
+  margin: 1.6em 0;
+}
+
+.smd-preview strong { font-weight: 700; }
+.smd-preview em     { font-style: italic; }
+.smd-preview del    { opacity: .5; text-decoration: line-through; }
+
+/* ── Table ──────────────────────────────────────────────────── */
+.smd-preview table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+  font-family: var(--smd-font-ui);
+  font-size: .9em;
+  border-radius: var(--smd-radius-sm);
+  overflow: hidden;
+  box-shadow: 0 0 0 1px var(--smd-border);
+}
+
+.smd-preview th {
+  background: var(--smd-bg-toolbar);
+  font-weight: 600;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  font-size: .8em;
+  color: var(--smd-text-muted);
+}
+
+.smd-preview th, .smd-preview td {
+  padding: .55em .9em;
+  border: 1px solid var(--smd-border);
+  text-align: left;
+}
+
+.smd-preview tr:nth-child(even) td {
+  background: var(--smd-bg-code);
+}
+
+/* ── Block System ───────────────────────────────────────────── */
+
+/*
+ * Each line of markdown lives in a .smd-block div.
+ * Hovering reveals a gutter with + (add) and ⠿ (drag) handles.
+ * data-type on the block drives visual typography.
+ */
+
+.smd-block {
+  display: flex;
+  align-items: flex-start;
+  position: relative;
+  border-radius: var(--smd-radius-xs);
+  transition: background var(--smd-transition);
+  margin: 1px 0;
+}
+
+.smd-block:hover {
+  background: rgba(55,53,47,.03);
+}
+
+.smd-block.smd-block-active {
+  background: rgba(55,53,47,.04);
+}
+
+/* ── Gutter (left side handles) ────────────────────────────── */
+.smd-block-gutter {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  width: 52px;
+  flex-shrink: 0;
+  padding: 2px 4px 2px 8px;
+  opacity: 0;
+  transition: opacity var(--smd-transition);
+  pointer-events: none;
+  box-sizing: border-box;
+  /* Vertically align with first line of content */
+  padding-top: 3px;
+}
+
+.smd-block:hover .smd-block-gutter,
+.smd-block.smd-block-active .smd-block-gutter {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.smd-block-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  border-radius: var(--smd-radius-xs);
+  cursor: pointer;
+  color: var(--smd-text-subtle);
+  padding: 0;
+  flex-shrink: 0;
+  transition: background var(--smd-transition), color var(--smd-transition);
+}
+
+.smd-block-add:hover {
+  background: var(--smd-bg-hover);
+  color: var(--smd-text);
+}
+
+.smd-block-add svg {
+  width: 13px;
+  height: 13px;
+}
+
+.smd-block-drag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 20px;
+  cursor: grab;
+  color: var(--smd-text-subtle);
+  border-radius: var(--smd-radius-xs);
+  transition: color var(--smd-transition);
+}
+
+.smd-block-drag svg {
+  width: 10px;
+  height: 16px;
+}
+
+/* ── Block content area ─────────────────────────────────────── */
+.smd-block-content {
+  flex: 1;
+  min-width: 0;
+  outline: none;
+  padding: 3px 28px 3px 0;
+  font-family: var(--smd-font-ui);
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--smd-text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  caret-color: var(--smd-accent);
+  /* Ensure the gutter side never gets squished */
+  min-height: 1.65em;
+}
+
+.smd-block-content:empty::before {
+  content: attr(data-placeholder);
+  color: var(--smd-text-subtle);
+  pointer-events: none;
+}
+
+/* Only the first block shows a placeholder */
+.smd-block:first-child .smd-block-content:empty::before {
+  content: 'Type \'/\' for commands, or just start writing…';
+  color: var(--smd-text-subtle);
+  font-style: italic;
+}
+
+/* ── Block type visual styles ───────────────────────────────── */
+.smd-block[data-type="h1"] .smd-block-content {
+  font-size: 1.9em;
+  font-weight: 700;
+  letter-spacing: -.025em;
+  line-height: 1.25;
+  color: var(--smd-text);
+  padding-top: 6px;
+  padding-bottom: 2px;
+}
+
+.smd-block[data-type="h2"] .smd-block-content {
+  font-size: 1.45em;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  line-height: 1.3;
+  color: var(--smd-text);
+  padding-top: 5px;
+  padding-bottom: 2px;
+}
+
+.smd-block[data-type="h3"] .smd-block-content {
+  font-size: 1.2em;
+  font-weight: 600;
+  letter-spacing: -.015em;
+  line-height: 1.35;
+  color: var(--smd-text);
+  padding-top: 4px;
+}
+
+.smd-block[data-type="h4"] .smd-block-content {
+  font-size: 1.05em;
+  font-weight: 600;
+  color: var(--smd-text);
+}
+
+.smd-block[data-type="quote"] .smd-block-content {
+  border-left: 3.5px solid var(--smd-border-focus);
+  padding-left: 12px;
+  color: var(--smd-text-muted);
+  font-style: italic;
+  background: var(--smd-bg-code);
+  border-radius: 0 var(--smd-radius-xs) var(--smd-radius-xs) 0;
+}
+
+.smd-block[data-type="ul"] .smd-block-content,
+.smd-block[data-type="ol"] .smd-block-content {
+  padding-left: 4px;
+}
+
+.smd-block[data-type="code"] .smd-block-content,
+.smd-block[data-type="code-inner"] .smd-block-content {
+  font-family: var(--smd-font-mono);
+  font-size: .875em;
+  background: #1e1e2e;
+  color: #cdd6f4;
+  line-height: 1.6;
+  padding: 0 14px;
+}
+
+/* ── Fence marker lines (``` opening/closing) are hidden ────── */
+/* They act as structural anchors only — zero height, invisible  */
+.smd-block[data-type="code"] .smd-block-content {
+  color: transparent;
+  user-select: none;
+  pointer-events: none;
+  font-size: 0;
+  padding: 0;
+  height: 0;
+  overflow: hidden;
+  line-height: 0;
+  background: #1e1e2e;
+  border-radius: 0;
+}
+
+/* Opening fence: rounded top + top padding via margin on first inner */
+.smd-block[data-type="code"] + .smd-block[data-type="code-inner"]:first-of-type .smd-block-content,
+.smd-block[data-type="code"] + .smd-block[data-type="code-inner"] .smd-block-content {
+  border-radius: 0;
+}
+
+/* First code-inner after opening fence gets rounded top + top padding */
+.smd-block[data-type="code"] + .smd-block[data-type="code-inner"] .smd-block-content {
+  padding-top: 10px;
+  border-radius: var(--smd-radius-sm) var(--smd-radius-sm) 0 0;
+}
+
+/* Middle inner lines — no radius */
+.smd-block[data-type="code-inner"] + .smd-block[data-type="code-inner"] .smd-block-content {
+  padding-top: 0;
+  border-radius: 0;
+}
+
+/* Last inner line before closing fence gets rounded bottom + bottom padding */
+.smd-block[data-type="code-inner"] + .smd-block[data-type="code"] .smd-block-content {
+  /* This is the CLOSING fence — keep it invisible but add bottom rounding to the previous inner */
+}
+
+/* Apply bottom radius + padding to the inner line that precedes a closing fence */
+/* We use the closing fence's own zero-height block to carry bottom border */
+.smd-block[data-type="code-inner"]:has(+ .smd-block[data-type="code"]) .smd-block-content {
+  border-radius: 0 0 var(--smd-radius-sm) var(--smd-radius-sm);
+  padding-bottom: 10px;
+}
+
+/* Closing fence block: zero height but carries the bottom rounded visual */
+.smd-block[data-type="code-inner"] + .smd-block[data-type="code"] {
+  /* nothing needed — inner line above handles the rounding */
+}
+
+/* Edge case: ``` with NO inner lines — show as a visible empty code block */
+.smd-block[data-type="code"]:not(:has(+ .smd-block[data-type="code-inner"])):not(.smd-block[data-type="code-inner"] + *) .smd-block-content {
+  color: #cdd6f4;
+  font-size: .875em;
+  padding: 10px 14px;
+  border-radius: var(--smd-radius-sm);
+  height: auto;
+  line-height: 1.6;
+  user-select: text;
+  pointer-events: auto;
+}
+
+/* Gutter alignment for fence marker rows — collapse them visually */
+.smd-block[data-type="code"] .smd-block-gutter {
+  height: 0;
+  overflow: hidden;
+  padding: 0;
+  pointer-events: none;
+}
+
+/* Prevent hover highlight on invisible fence rows */
+.smd-block[data-type="code"]:hover {
+  background: transparent;
+}
+
+.smd-block[data-type="hr"] .smd-block-content {
+  color: transparent;
+  user-select: none;
+  position: relative;
+  min-height: 24px;
+}
+
+.smd-block[data-type="hr"] .smd-block-content::after {
+  content: '';
+  display: block;
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 28px;
+  height: 1.5px;
+  background: var(--smd-border);
+  border-radius: 2px;
+  transform: translateY(-50%);
+}
+
+.smd-block-drag:active,
+.smd-block-drag:hover {
+  color: var(--smd-text-muted);
+  cursor: grab;
+}
+
+/* Ghost block — follows cursor during drag */
+.smd-block-ghost {
+  position: fixed !important;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: .7;
+  box-shadow: 0 8px 24px rgba(0,0,0,.12), 0 2px 6px rgba(0,0,0,.08);
+  border-radius: var(--smd-radius-sm);
+  background: var(--smd-bg);
+  border: 1.5px solid var(--smd-border);
+  will-change: transform;
+  transition: box-shadow .1s ease;
+  /* Disable gutter interaction inside ghost */
+  left: 0;
+  top: 0;
+}
+
+.smd-block-ghost .smd-block-gutter {
+  opacity: 1 !important;
+  pointer-events: none;
+}
+
+/* Original block — hidden while ghost travels */
+.smd-block-dragging {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Drop position indicator line */
+.smd-drop-indicator {
+  display: none;
+  position: absolute;
+  left: 52px;   /* align with block content, past gutter */
+  right: 8px;
+  height: 2px;
+  background: var(--smd-accent);
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 100;
+  box-shadow: 0 0 0 3px var(--smd-accent-light);
+}
+
+.smd-drop-indicator::before {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--smd-accent);
+}
+
+/* ── Status bar ─────────────────────────────────────────────── */
+.smd-statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 5px 14px;
+  background: var(--smd-bg-toolbar);
+  border-top: 1px solid var(--smd-border);
+  font-size: 11px;
+  color: var(--smd-text-subtle);
+  font-family: var(--smd-font-ui);
+  letter-spacing: .02em;
+  user-select: none;
+}
+
+/* Unsaved changes pill */
+.smd-unsaved {
+  display: none;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--smd-warn);
+  background: var(--smd-warn-bg);
+  border: 1px solid var(--smd-warn-border);
+  padding: 2px 8px 2px 6px;
+  border-radius: 20px;
+  letter-spacing: .01em;
+  animation: smd-pulse 2s ease infinite;
+}
+
+.smd-unsaved.visible {
+  display: flex;
+}
+
+.smd-unsaved svg {
+  width: 10px;
+  height: 10px;
+  fill: currentColor;
+  stroke: none;
+  flex-shrink: 0;
+}
+
+@keyframes smd-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .65; }
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .smd-editor, .smd-preview { padding: 14px 16px; }
+  .smd-preview-split .smd-editor { display: none; }
+  .smd-preview-split .smd-preview {
+    display: block;
+    border-left: none;
+    flex: 1;
+  }
+}

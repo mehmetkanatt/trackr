@@ -3,7 +3,7 @@
 
 <head>
     {{> head }}
-    <link rel="stylesheet" href="/css/simplemde-theme-dark.min.css">
+    <link rel="stylesheet" href="/css/editor.css">
     <link rel="stylesheet" href="/css/markdown.css">
 </head>
 
@@ -23,6 +23,8 @@
                             <div class="card-body">
                                 <h5 class="card-title">Add New Highlight</h5>
                                 <textarea id="highlight" hidden></textarea>
+
+                                <br>
 
                                 <div class="input-group input-group-lg">
                                     <select id="tags" name="tags[]" class="form-control select2-multi" multiple="multiple">
@@ -47,33 +49,25 @@
 {{> menu }}
 {{> highlight-versions }}
 
-<script src="/js/simplemde.min.js"></script>
-<script src="/js/codemirror-4.inline-attachment.min.js"></script>
+<script src="/js/editor.js"></script>
 
 <script>
     $(document).ready(function () {
 
-        var unsavedChanges = false;
-
-        var simplemde = new SimpleMDE({
-            element: $("#highlight")[0],
-            toolbar: ["bold", "italic", "strikethrough", "heading", "code", "quote", "unordered-list", "ordered-list", "clean-block", "link", "image", "table", "horizontal-rule", "preview"],
-            insertTexts: {"image": ["![", "](/img/)"]},
-        });
-
-        inlineAttachment.editors.codemirror4.attach(simplemde.codemirror, {
-            uploadUrl: '/images'
+        var editor = new Editor({
+            element: document.getElementById("highlight"),
+            autofocus: true,
+            uploadEndpoint: "/images"
         });
 
         $(document).on('keydown', function (e) {
             if (e.metaKey && e.keyCode === 13) {
-                var highlight = simplemde.value();
+                var highlight = editor.value();
                 var tags = $('#tags').val();
                 var data = "highlight=" + encodeURIComponent(highlight) + "&tags=" + encodeURIComponent(tags);
                 var result = ajaxCall('POST', "/bookmarks/{{bookmarkUID}}/highlights", data)
 
                 if (result !== false) {
-                    unsavedChanges = false;
                     location.reload();
                 }
             }
@@ -81,25 +75,15 @@
 
         $('.enterButtonKeyPress').bind('keypress', function (e) {
             if (e.keyCode == 13) {
-                var highlight = simplemde.value();
+                var highlight = editor.value();
                 var tags = $('#tags').val();
                 var data = "highlight=" + encodeURIComponent(highlight) + "&tags=" + encodeURIComponent(tags);
                 var result = ajaxCall('POST', "/bookmarks/{{bookmarkUID}}/highlights", data)
 
                 if (result !== false) {
-                    unsavedChanges = false;
+                    editor.markSaved()
                     location.reload();
                 }
-            }
-        });
-
-        simplemde.codemirror.on("change", function(){
-            unsavedChanges = true;
-        });
-
-        window.addEventListener("beforeunload", function(event) {
-            if (unsavedChanges) {
-                event.preventDefault();
             }
         });
 

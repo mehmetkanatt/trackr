@@ -3,6 +3,7 @@
 namespace App\controller;
 
 use App\model\ActivityModel;
+use App\model\HighlightModel;
 use App\util\lang;
 use App\enum\BookStatus;
 use App\enum\PathStatus;
@@ -23,6 +24,7 @@ class BookController extends Controller
     private $bookModel;
     private $tagModel;
     private $activityModel;
+    private $highlightModel;
 
     public function __construct(ContainerInterface $container)
     {
@@ -30,6 +32,7 @@ class BookController extends Controller
         $this->bookModel = new BookModel($container);
         $this->tagModel = new TagModel($container);
         $this->activityModel = new ActivityModel($container);
+        $this->highlightModel = new HighlightModel($container);
     }
 
     public function booksPathInside(ServerRequestInterface $request, ResponseInterface $response, $args)
@@ -129,7 +132,7 @@ class BookController extends Controller
         $bookId = $book['id'];
         $bookName = $book['author'] . ' - ' . $book['title'];
 
-        $highlights = $this->bookModel->getHighlights($bookId);
+        $highlights = $this->highlightModel->getHighlightsByGivenField('book_id', $bookId);
 
         $tags = $this->tagModel->getTagsBySourceId($bookId, Sources::BOOK->value);
 

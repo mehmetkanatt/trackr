@@ -3,8 +3,7 @@
 
 <head>
     {{> head }}
-    <link rel="stylesheet" href="/css/simplemde-theme-dark.min.css">
-
+    <link rel="stylesheet" href="/css/editor.css">
 </head>
 
 <body class="vertical dark">
@@ -23,6 +22,8 @@
                             <div class="card-body">
                                 <h5 class="card-title">Add New Highlight</h5>
                                 <textarea id="highlight" hidden></textarea>
+
+                                <br>
 
                                 <div class="input-group input-group-md">
                                     <input id="page" placeholder="Page" type="number"
@@ -44,11 +45,7 @@
                         </div>
                     </div>
 
-                    <ul>
-                        {{#highlights}}
-                            <li>{{{highlight}}} <a href="/highlights/{{id}}/details">Go to highlight</a></li>
-                        {{/highlights}}
-                    </ul>
+                    {{> highlight-cards }}
 
                 </div> <!-- .col-12 -->
             </div> <!-- .row -->
@@ -57,27 +54,20 @@
 </div> <!-- .wrapper -->
 
 {{> menu }}
-<script src="/js/simplemde.min.js"></script>
-<script src="/js/codemirror-4.inline-attachment.min.js"></script>
+<script src="/js/editor.js"></script>
 
 <script>
     $(document).ready(function () {
 
-        var simplemde = new SimpleMDE({
-            element: $("#highlight")[0],
-            toolbar: ["bold", "italic", "strikethrough", "heading", "code", "quote", "unordered-list", "ordered-list", "clean-block", "link", "image", "table", "horizontal-rule", "preview"],
-            insertTexts: {"image": ["![", "](/img/)"]},
-        });
-
-        $('#highlight').show();
-
-        inlineAttachment.editors.codemirror4.attach(simplemde.codemirror, {
-            uploadUrl: '/images'
+        var editor = new Editor({
+            element: document.getElementById("highlight"),
+            autofocus: true,
+            uploadEndpoint: "/images"
         });
 
         $('.enterButtonKeyPress').bind('keypress', function (e) {
             if (e.keyCode == 13) {
-                var highlight = simplemde.value();
+                var highlight = editor.value();
                 var tags = $('#tags').val();
                 var page = $('#page').val();
                 var loc = $('#location').val();
@@ -90,6 +80,7 @@
                 var result = ajaxCall('POST', "/books/{{bookUID}}/highlights", data)
 
                 if (result !== false) {
+                    editor.markSaved()
                     location.reload();
                 }
             }

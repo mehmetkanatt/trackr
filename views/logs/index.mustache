@@ -3,7 +3,7 @@
 
 <head>
     {{> head }}
-    <link rel="stylesheet" href="/css/simplemde-theme-dark.min.css">
+    <link rel="stylesheet" href="/css/editor.css">
     <link rel="stylesheet" href="/css/version-diff.css">
     <link rel="stylesheet" href="/css/highlightjs/default.min.css">
     <link rel="stylesheet" href="/css/markdown.css">
@@ -33,6 +33,8 @@
                                                                                class="text text-danger text-hide">Not Saved</span>
                                 </h5>
                                 <textarea id="logTextArea" hidden>{{todaysLog}}</textarea>
+
+                                <br>
 
                                 <div class="form-group">
                                     <button id="saveLog" type="button" class="btn btn-primary">Save</button>
@@ -73,46 +75,32 @@
 {{> include}}
 {{> menu }}
 {{> log-versions }}
-<script src="/js/simplemde.min.js"></script>
+<script src="/js/editor.js"></script>
 <script src="/js/highlight.min.js"></script>
-<script src="/js/codemirror-4.inline-attachment.min.js"></script>
 
 <script>
     $(document).ready(function () {
 
-        var unsavedChanges = false;
-
-        var simplemde = new SimpleMDE({
-            element: $("#logTextArea")[0],
-            toolbar: ["bold", "italic", "strikethrough", "heading", "code", "quote", "unordered-list", "ordered-list", "clean-block", "link", "image", "table", "horizontal-rule", "preview"],
-            insertTexts: {"image": ["![", "](/img/)"]},
-        });
-
-        var previousLog = simplemde.value();
-
-        inlineAttachment.editors.codemirror4.attach(simplemde.codemirror, {
-            uploadUrl: '/images'
+        var editor = new Editor({
+            element: document.getElementById("logTextArea"),
+            autofocus: true,
+            uploadEndpoint: "/images"
         });
 
         hljs.highlightAll();
 
         $(document).keydown(function (event) {
             if ((event.metaKey || event.ctrlKey) && event.which === 83) {
-                event.preventDefault(); // Prevent default action (usually means saving the page)
-                var currentLog = simplemde.value();
-
-                if (!currentLog) {
-                    $.bootstrapPurr('Log cannot be null', {
-                        type: 'danger'
-                    });
-                    return;
-                }
-                autoSave();
+                saveLog();
             }
         });
 
         $("#saveLog").on('click', function (e) {
-            var currentLog = simplemde.value();
+            saveLog()
+        });
+
+        var saveLog = function () {
+            var currentLog = editor.value();
 
             if (!currentLog) {
                 $.bootstrapPurr('Log cannot be null', {
@@ -120,34 +108,17 @@
                 });
                 return;
             }
-            autoSave();
-        });
 
-        var autoSave = function () {
-            var currentLog = simplemde.value();
-
-            if (currentLog && currentLog !== previousLog) {
-                ajaxCall('POST', "/logs", "log=" + encodeURIComponent(currentLog))
-                previousLog = currentLog;
-                unsavedChanges = false;
-                $("#spanNotSavedCaution").addClass("text-hide");
+            if (!editor.isDirty()) {
+                $.bootstrapPurr("You haven't made any changes", {
+                    type: 'warning'
+                });
+                return;
             }
+
+            ajaxCall('POST', "/logs", "log=" + encodeURIComponent(currentLog))
+            editor.markSaved()
         }
-
-        var timer = setInterval(autoSave, 5000);
-
-        simplemde.codemirror.on("change", function (e) {
-            unsavedChanges = true;
-            clearInterval(timer);
-            $("#spanNotSavedCaution").removeClass("text-hide");
-            timer = setInterval(autoSave, 5000);
-        });
-
-        window.addEventListener("beforeunload", function (event) {
-            if (unsavedChanges) {
-                event.preventDefault();
-            }
-        });
 
     });
 </script>

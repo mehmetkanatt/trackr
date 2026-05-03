@@ -3,7 +3,7 @@
 
 <head>
     {{> head }}
-    <link rel="stylesheet" href="/css/simplemde-theme-dark.min.css">
+    <link rel="stylesheet" href="/css/editor.css">
 </head>
 
 <body class="vertical dark">
@@ -226,22 +226,21 @@
 {{> include}}
 {{> menu }}
 
-<script src="/js/simplemde.min.js"></script>
-<script src="/js/codemirror-4.inline-attachment.min.js"></script>
+<script src="/js/editor.js"></script>
 
 <script>
     $(document).ready(function () {
 
-        var unsavedChanges = false;
-
-        var simplemdeHighlight = new SimpleMDE({
-            element: $("#highlight")[0],
-            toolbar: ["bold", "italic", "strikethrough", "heading", "code", "quote", "unordered-list", "ordered-list", "clean-block", "link", "image", "table", "horizontal-rule", "preview"],
-            insertTexts: {"image": ["![", "](/img/)"]},
+        var mainEditor = new Editor({
+            element: document.getElementById("highlight"),
+            autofocus: true,
+            uploadEndpoint: "/images"
         });
 
-        inlineAttachment.editors.codemirror4.attach(simplemdeHighlight.codemirror, {
-            uploadUrl: '/images'
+        var commentEditor = new Editor({
+            element: document.getElementById("comment"),
+            autofocus: false,
+            uploadEndpoint: "/images"
         });
 
         $('#author').select2({
@@ -296,30 +295,10 @@
             theme: 'bootstrap4',
         });
 
-        var simplemdeComment = new SimpleMDE({
-            element: $("#comment")[0],
-            toolbar: ["bold", "italic", "strikethrough", "heading", "code", "quote", "unordered-list", "ordered-list", "clean-block", "link", "image", "table", "horizontal-rule", "preview"],
-            insertTexts: {"image": ["![", "](/img/)"]},
-        });
-
-        inlineAttachment.editors.codemirror4.attach(simplemdeComment.codemirror, {
-            uploadUrl: '/images'
-        });
-
-        simplemdeHighlight.codemirror.on("change", function(){
-            unsavedChanges = true;
-        });
-
-        window.addEventListener("beforeunload", function(event) {
-            if (unsavedChanges) {
-                event.preventDefault();
-            }
-        });
-
         $('#addComment').on('click', function (e) {
 
             var highlightID = $('#addComment').data('id');
-            var comment = simplemdeComment.value();
+            var comment = commentEditor.value();
             var author = $('#commentAuthor').val();
             var source = $('#commentSource').val();
             var tags = $('#commentTags').val();
@@ -334,6 +313,7 @@
             var result = ajaxCall('POST', "/highlights/" + highlightID + "/sub", data)
 
             if (result !== false) {
+                commentEditor.markSaved()
                 location.reload();
             }
 
@@ -353,7 +333,6 @@
 
         $(document).keydown(function(event) {
             if ((event.metaKey || event.ctrlKey) && event.which === 83) {
-                event.preventDefault(); // Prevent default action (usually means saving the page)
                 updateHighlight();
             }
         });
@@ -364,14 +343,13 @@
             var result = ajaxCall('DELETE', "/highlights/" + highlightID, null);
 
             if (result !== false) {
-                unsavedChanges = false;
                 window.location.replace('/highlights/{{nextID}}/details')
             }
 
         });
 
         var updateHighlight = function () {
-            var highlight = simplemdeHighlight.value();
+            var highlight = mainEditor.value();
             var author = $('#author').val();
             var source = $('#source').val();
             var page = $('#page').val();
@@ -400,7 +378,7 @@
             var result = ajaxCall('PUT', "/highlights/" + highlightID, data)
 
             if (result !== false) {
-                unsavedChanges = false;
+                mainEditor.markSaved();
                 location.reload();
             }
         }

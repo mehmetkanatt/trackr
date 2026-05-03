@@ -163,7 +163,8 @@ class LogController extends Controller
             'highlight' => $params['log'],
             'book' => null,
             'source' => 'Activity Log',
-            'type' => 2
+            'type' => 2,
+            'title' => 'Log - ' . $today
         ];
 
         if ($todaysLog) {

@@ -163,6 +163,7 @@ class BoardController extends Controller
             'source' => 'Task Management',
             'type' => 3,
             'tags' => $tags,
+            'title' => $task['title'],
         ];
 
         if ($task['body_hid']) {

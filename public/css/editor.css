@@ -962,6 +962,52 @@
   50%       { opacity: .65; }
 }
 
+/* ── Table size picker popup ────────────────────────────────── */
+.smd-table-picker {
+  position: absolute;
+  z-index: 200;
+  background: var(--smd-bg-toolbar);
+  border: 1.5px solid var(--smd-border);
+  border-radius: var(--smd-radius-sm);
+  box-shadow: var(--smd-shadow-md);
+  padding: 10px;
+  user-select: none;
+  animation: smd-fadein .1s ease;
+}
+
+.smd-table-picker-label {
+  font-size: 11px;
+  font-family: var(--smd-font-ui);
+  font-weight: 600;
+  color: var(--smd-text-muted);
+  text-align: center;
+  margin-bottom: 8px;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+
+.smd-table-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 24px);
+  grid-template-rows: repeat(5, 24px);
+  gap: 3px;
+}
+
+.smd-table-picker-cell {
+  width: 24px;
+  height: 24px;
+  border-radius: 3px;
+  background: var(--smd-bg-hover);
+  border: 1.5px solid var(--smd-border);
+  cursor: pointer;
+  transition: background var(--smd-transition), border-color var(--smd-transition);
+}
+
+.smd-table-picker-cell.smd-table-cell-hover {
+  background: var(--smd-accent-light);
+  border-color: var(--smd-accent);
+}
+
 /* ── Responsive ─────────────────────────────────────────────── */
 @media (max-width: 640px) {
   .smd-editor, .smd-preview { padding: 14px 16px; }

@@ -748,10 +748,19 @@
       btn.title       = def.title || name;
       btn.dataset.action = def.action || name;
       btn.innerHTML   = ICONS[name] || '<span>' + name[0].toUpperCase() + '</span>';
-      btn.addEventListener('mousedown', function(e) {
-        e.preventDefault(); /* Don't steal focus from editor */
-        self._handleAction(def.action || name);
-      });
+
+      if (name === 'table') {
+        /* Table button shows a grid picker on click */
+        btn.addEventListener('mousedown', function(e) {
+          e.preventDefault();
+          self._toggleTablePicker(btn);
+        });
+      } else {
+        btn.addEventListener('mousedown', function(e) {
+          e.preventDefault();
+          self._handleAction(def.action || name);
+        });
+      }
       bar.appendChild(btn);
 
       /* Store button references */
@@ -1212,6 +1221,144 @@
   };
 
   /* ================================================================
+     Table picker — visual grid to choose rows × cols
+     ================================================================ */
+  Editor.prototype._toggleTablePicker = function(anchorBtn) {
+    /* If picker already open, close it */
+    if (this._tablePicker) {
+      this._closeTablePicker();
+      return;
+    }
+
+    var self    = this;
+    var COLS    = 6;
+    var ROWS    = 5;
+    var picker  = document.createElement('div');
+    picker.className = 'smd-table-picker';
+
+    var label = document.createElement('div');
+    label.className   = 'smd-table-picker-label';
+    label.textContent = 'Insert table';
+    picker.appendChild(label);
+
+    var grid = document.createElement('div');
+    grid.className = 'smd-table-picker-grid';
+
+    var cells = [];
+    for (var r = 1; r <= ROWS; r++) {
+      for (var c = 1; c <= COLS; c++) {
+        (function(row, col) {
+          var cell = document.createElement('div');
+          cell.className = 'smd-table-picker-cell';
+          cell.dataset.row = row;
+          cell.dataset.col = col;
+
+          cell.addEventListener('mouseover', function() {
+            /* Highlight all cells up to row×col */
+            cells.forEach(function(cc) {
+              var cr = parseInt(cc.dataset.row);
+              var cc2 = parseInt(cc.dataset.col);
+              cc.classList.toggle('smd-table-cell-hover', cr <= row && cc2 <= col);
+            });
+            label.textContent = col + ' × ' + row + ' table';
+          });
+
+          cell.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            self._closeTablePicker();
+            self._insertTable(row, col);
+          });
+
+          grid.appendChild(cell);
+          cells.push(cell);
+        }(r, c));
+      }
+    }
+
+    picker.appendChild(grid);
+
+    /* Reset label on mouse leave */
+    grid.addEventListener('mouseleave', function() {
+      cells.forEach(function(c) { c.classList.remove('smd-table-cell-hover'); });
+      label.textContent = 'Insert table';
+    });
+
+    /* Position below the anchor button */
+    this.wrapper.appendChild(picker);
+    var btnRect     = anchorBtn.getBoundingClientRect();
+    var wrapRect    = this.wrapper.getBoundingClientRect();
+    picker.style.top  = (btnRect.bottom - wrapRect.top + 4) + 'px';
+    picker.style.left = (btnRect.left   - wrapRect.left)    + 'px';
+
+    this._tablePicker = picker;
+    anchorBtn.classList.add('smd-active');
+    this._tablePickerBtn = anchorBtn;
+
+    /* Close on outside click */
+    var self2 = this;
+    this._tablePickerOutside = function(e) {
+      if (!picker.contains(e.target) && e.target !== anchorBtn) {
+        self2._closeTablePicker();
+      }
+    };
+    setTimeout(function() {
+      document.addEventListener('mousedown', self2._tablePickerOutside);
+    }, 0);
+  };
+
+  Editor.prototype._closeTablePicker = function() {
+    if (this._tablePicker) {
+      this._tablePicker.parentNode && this._tablePicker.parentNode.removeChild(this._tablePicker);
+      this._tablePicker = null;
+    }
+    if (this._tablePickerBtn) {
+      this._tablePickerBtn.classList.remove('smd-active');
+      this._tablePickerBtn = null;
+    }
+    document.removeEventListener('mousedown', this._tablePickerOutside);
+    this._tablePickerOutside = null;
+  };
+
+  Editor.prototype._insertTable = function(rows, cols) {
+    /* Build markdown table */
+    var lines = [];
+
+    /* Header row */
+    var header = '|';
+    for (var c = 1; c <= cols; c++) header += ' Col' + c + ' |';
+    lines.push(header);
+
+    /* Separator row */
+    var sep = '|';
+    for (var c2 = 1; c2 <= cols; c2++) sep += '-----|';
+    lines.push(sep);
+
+    /* Data rows */
+    for (var r = 1; r <= rows; r++) {
+      var row = '|';
+      for (var c3 = 1; c3 <= cols; c3++) row += '     |';
+      lines.push(row);
+    }
+
+    /* Insert each line as its own block */
+    var self        = this;
+    var activeBlock = this.editor.querySelector('.smd-block-active') ||
+                      this.editor.querySelector('.smd-block:last-child');
+
+    lines.forEach(function(line) {
+      if (activeBlock) {
+        self._addBlockAfter(activeBlock, line);
+        activeBlock = activeBlock.nextElementSibling || activeBlock;
+      } else {
+        self.editor.appendChild(createBlock(line, self));
+      }
+    });
+
+    self._syncToTextarea();
+    self._updateWordCount();
+  };
+
+  /* ================================================================
      Code block insertion — toolbar button
      Inserts opening ```, a blank content line, closing ```,
      then places cursor on the content line ready to type.
@@ -1599,6 +1746,7 @@
     window.removeEventListener('beforeunload', this._beforeUnloadHandler);
     if (this._autoSaveDebounceTimer) clearTimeout(this._autoSaveDebounceTimer);
     if (this._autoSaveToastTimer)    clearTimeout(this._autoSaveToastTimer);
+    this._closeTablePicker();
     if (this.options.element) {
       this.options.element.hidden = false;
     }

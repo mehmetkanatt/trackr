@@ -350,6 +350,54 @@
   to   { transform: translateY(-6px); }
 }
 
+/* ── Auto-save toast ────────────────────────────────────────── */
+.smd-autosave-toast {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%) translateY(6px);
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--smd-font-ui);
+  padding: 5px 14px;
+  border-radius: 20px;
+  pointer-events: none;
+  z-index: 60;
+  opacity: 0;
+  transition: opacity .2s ease, transform .2s ease;
+  white-space: nowrap;
+}
+
+.smd-autosave-toast.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.smd-autosave-saving {
+  background: var(--smd-text-muted);
+  color: var(--smd-bg);
+}
+
+.smd-autosave-saved {
+  background: #16a34a;
+  color: #fff;
+}
+
+.smd-autosave-error {
+  background: #dc2626;
+  color: #fff;
+}
+
+/* Auto-save last-saved time in status bar */
+.smd-autosave-status {
+  flex: 1;
+  text-align: center;
+  font-size: 11px;
+  color: var(--smd-text-subtle);
+  font-family: var(--smd-font-ui);
+  letter-spacing: .01em;
+}
+
 /* ── Upload progress ────────────────────────────────────────── */
 .smd-upload-progress {
   position: absolute;
@@ -833,9 +881,9 @@
   pointer-events: none;
 }
 
-/* Original block — hidden while ghost travels */
+/* Original block — dimmed while ghost travels, not hidden */
 .smd-block-dragging {
-  opacity: 0;
+  opacity: .35;
   pointer-events: none;
 }
 

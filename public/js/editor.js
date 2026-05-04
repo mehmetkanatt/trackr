@@ -325,11 +325,10 @@
           case 'b': e.preventDefault(); self._handleAction('bold');   return;
           case 'i': e.preventDefault(); self._handleAction('italic'); return;
           case 'k': e.preventDefault(); self._handleAction('link');   return;
-          case 'a':
-            /* Mark that all content is selected — next Delete/Backspace clears all */
-            self._allSelected = true;
-            /* Let the browser do native select-all within the block,
-               but we intercept the follow-up delete */
+          case 'a': e.preventDefault(); self._selectAll();            return;
+          case 'z':
+            e.preventDefault();
+            self._undoRestore();
             return;
         }
       }
@@ -337,6 +336,7 @@
       if (self._allSelected && (e.key === 'Delete' || e.key === 'Backspace')) {
         e.preventDefault();
         self._allSelected = false;
+        self._undoSnapshot();
         self._clearEditor(true); /* true = skip confirm, already intentional */
         return;
       }
@@ -456,7 +456,6 @@
       var lines = plain.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
 
       if (lines.length === 1) {
-        /* Single line — insert at cursor position normally */
         document.execCommand('insertText', false, lines[0]);
       } else {
         /* Multi-line paste — insert first chunk into current block,
@@ -571,9 +570,11 @@
     /* Baseline: the value the editor started with (or was last saved to).
        Dirty state is determined by comparing current content to this. */
     this._savedValue = this.options.initialValue || '';
+    this._clearSnapshot = null; /* single snapshot saved just before a clear */
     this._build();
     this._bindEvents();
     this._initTheme();
+    this._initAutoSave();
 
     /* Warn on page unload if there are unsaved changes */
     var self = this;
@@ -608,13 +609,15 @@
       }
     }
     return {
-      element:         opts.element        || null,
-      toolbar:         opts.toolbar        || DEFAULT_TOOLBAR.map(function(b){ return b.name; }),
-      insertTexts:     insertTexts,
-      autofocus:       opts.autofocus      !== undefined ? opts.autofocus : false,
-      uploadEndpoint:  opts.uploadEndpoint || null,
-      placeholder:     opts.placeholder    || 'Start writing…',
-      initialValue:    opts.initialValue   || (opts.element ? opts.element.value : '') || ''
+      element:             opts.element        || null,
+      toolbar:             opts.toolbar        || DEFAULT_TOOLBAR.map(function(b){ return b.name; }),
+      insertTexts:         insertTexts,
+      autofocus:           opts.autofocus      !== undefined ? opts.autofocus : false,
+      uploadEndpoint:      opts.uploadEndpoint || null,
+      placeholder:         opts.placeholder    || 'Start writing…',
+      initialValue:        opts.initialValue   || (opts.element ? opts.element.value : '') || '',
+      /* Auto-save — { enabled, delay, callback, clearAfterSave } */
+      autoSave:            opts.autoSave       || null,
     };
   };
 
@@ -665,10 +668,16 @@
     progress.textContent = 'Uploading…';
     this.progressToast = progress;
 
+    /* Auto-save status toast */
+    var autoSaveToast = document.createElement('div');
+    autoSaveToast.className = 'smd-autosave-toast';
+    this.autoSaveToast = autoSaveToast;
+
     body.appendChild(ed);
     body.appendChild(preview);
     body.appendChild(overlay);
     body.appendChild(progress);
+    body.appendChild(autoSaveToast);
 
     /* Status bar */
     var status = document.createElement('div');
@@ -680,6 +689,11 @@
     unsaved.innerHTML = '<svg viewBox="0 0 8 8"><circle cx="4" cy="4" r="4"/></svg>Unsaved changes';
     this.unsavedBadge = unsaved;
 
+    /* Centre: autosave last-saved time */
+    var autoSaveStatus = document.createElement('span');
+    autoSaveStatus.className = 'smd-autosave-status';
+    this.autoSaveStatus = autoSaveStatus;
+
     /* Right: word count */
     var wordCount = document.createElement('span');
     wordCount.className = 'smd-word-count';
@@ -687,6 +701,7 @@
     this.wordCount = wordCount;
 
     status.appendChild(unsaved);
+    status.appendChild(autoSaveStatus);
     status.appendChild(wordCount);
 
     wrap.appendChild(body);
@@ -823,15 +838,16 @@
         if (files[i].type.startsWith('image/')) { hasImage = true; break; }
       }
       if (!hasImage) return;
-      /* Block the browser from opening the file */
       e.preventDefault();
       e.stopPropagation();
       wrap.classList.remove('smd-drag-over');
+
+      /* Collect only image files */
+      var imageFiles = [];
       for (var j = 0; j < files.length; j++) {
-        if (files[j].type.startsWith('image/')) {
-          self._uploadImage(files[j]);
-        }
+        if (files[j].type.startsWith('image/')) imageFiles.push(files[j]);
       }
+      self._uploadImages(imageFiles);
     }, true);
   };
 
@@ -849,10 +865,12 @@
     /* Ghost: a semi-transparent clone that follows the cursor */
     var ghost = draggedRow.cloneNode(true);
     ghost.className += ' smd-block-ghost';
+    var rect           = draggedRow.getBoundingClientRect();
     ghost.style.width  = draggedRow.offsetWidth + 'px';
-    ghost.style.top    = (draggedRow.getBoundingClientRect().top + window.scrollY) + 'px';
-    ghost.style.left   = (draggedRow.getBoundingClientRect().left + window.scrollX) + 'px';
-    document.body.appendChild(ghost);
+    ghost.style.top    = rect.top  + 'px';
+    ghost.style.left   = rect.left + 'px';
+    /* Append inside wrapper (not body) so CSS variables inherit dark mode */
+    this.wrapper.appendChild(ghost);
 
     /* Drop indicator line */
     var indicator = document.createElement('div');
@@ -917,7 +935,6 @@
 
       /* Perform the reorder */
       if (dropTarget === draggedRow || dropTarget === draggedRow.nextElementSibling) {
-        /* No-op: dropped in same place */
         return;
       }
       if (dropTarget) {
@@ -942,6 +959,33 @@
   Editor.prototype._reapplyAllBlockTypes = function() {
     var blocks = this.editor.querySelectorAll('.smd-block');
     blocks.forEach(function(b) { applyBlockType(b); });
+  };
+
+  /* ================================================================
+     Undo — single pre-clear snapshot
+     Saves editor state just before a clear operation.
+     Cmd/Ctrl+Z restores it once. Normal typing undo is handled
+     natively by the browser's contenteditable undo stack.
+     ================================================================ */
+  Editor.prototype._undoSnapshot = function() {
+    var lines = Array.from(
+      this.editor.querySelectorAll('.smd-block-content')
+    ).map(function(b) { return b.textContent; });
+    this._clearSnapshot = lines.join('\n');
+  };
+
+  Editor.prototype._undoRestore = function() {
+    if (!this._clearSnapshot) return;
+    var content = this._clearSnapshot;
+    this._clearSnapshot = null;
+    setPlainText(this.editor, content, this);
+    this._reapplyAllBlockTypes();
+    this._syncToTextarea();
+    this._updateWordCount();
+    /* Focus last block */
+    var blocks = this.editor.querySelectorAll('.smd-block-content');
+    var last = blocks[blocks.length - 1];
+    if (last) { last.focus(); this._placeCursorAtEnd(last); }
   };
 
   /* ── Add a new block after a given block row ─────────────── */
@@ -1007,7 +1051,6 @@
     var range = document.createRange();
     var textNode = el.firstChild;
     if (!textNode || textNode.nodeType !== Node.TEXT_NODE) {
-      /* No text node — just put cursor at end */
       this._placeCursorAtEnd(el);
       return;
     }
@@ -1018,6 +1061,50 @@
     sel.addRange(range);
   };
 
+  /* Select all content across every block */
+  Editor.prototype._selectAll = function() {
+    var blocks = this.editor.querySelectorAll('.smd-block-content');
+    if (!blocks.length) return;
+
+    var first = blocks[0];
+    var last  = blocks[blocks.length - 1];
+
+    /* Walk to the deepest first/last text nodes */
+    function firstTextNode(el) {
+      if (el.nodeType === Node.TEXT_NODE) return el;
+      for (var i = 0; i < el.childNodes.length; i++) {
+        var found = firstTextNode(el.childNodes[i]);
+        if (found) return found;
+      }
+      return null;
+    }
+    function lastTextNode(el) {
+      if (el.nodeType === Node.TEXT_NODE) return el;
+      for (var i = el.childNodes.length - 1; i >= 0; i--) {
+        var found = lastTextNode(el.childNodes[i]);
+        if (found) return found;
+      }
+      return null;
+    }
+
+    var startNode = firstTextNode(first) || first;
+    var endNode   = lastTextNode(last)   || last;
+    var endOffset = endNode.nodeType === Node.TEXT_NODE
+                    ? endNode.length
+                    : endNode.childNodes.length;
+
+    var range = document.createRange();
+    try {
+      range.setStart(startNode, 0);
+      range.setEnd(endNode, endOffset);
+      var sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      /* Mark all-selected so next Delete/Backspace clears */
+      this._allSelected = true;
+    } catch(e) {}
+  };
+
   /* ── Sync all blocks → hidden textarea + update dirty state ─ */
   Editor.prototype._syncToTextarea = function() {
     var content = getPlainText(this.editor);
@@ -1025,12 +1112,12 @@
       this.options.element.value = content;
     }
 
-    /* Dirty = content differs from the saved baseline.
-       For new editors (_savedValue is ''), dirty only when non-empty.
-       For existing content editors, dirty when different from original. */
     var isDirty = (content !== this._savedValue);
     this._isDirty = isDirty;
     this._setBadges(isDirty);
+
+    /* Kick the debounced auto-save on every change */
+    this._scheduleAutoSave();
   };
 
   /* ── Show/hide both unsaved badges ──────────────────────────── */
@@ -1111,10 +1198,10 @@
 
   /* Clear all content — toolbar button and Cmd/Ctrl+A+Delete shortcut */
   Editor.prototype._clearEditor = function(skipConfirm) {
-    /* Ask for confirmation unless called from the keyboard shortcut flow */
     if (!skipConfirm) {
       if (!window.confirm('Clear all content? This cannot be undone.')) return;
     }
+    this._undoSnapshot();
     /* Reset to a single empty block */
     setPlainText(this.editor, '', this);
     this._syncToTextarea();
@@ -1238,47 +1325,93 @@
   /* ================================================================
      Image upload
      ================================================================ */
-  Editor.prototype._uploadImage = function(file) {
+  /* ── Upload multiple images in parallel, insert all at once ── */
+  Editor.prototype._uploadImages = function(files) {
+    if (!files || !files.length) return;
     var self = this;
-    if (!this._uploadEndpoint) {
-      /* No endpoint — just insert a placeholder */
-      this._insertAtCursor('![' + file.name + '](IMAGE_URL)');
-      return;
-    }
 
-    /* Show toast */
-    this.progressToast.textContent = 'Uploading ' + file.name + '…';
+    /* Show a single shared toast for the whole batch */
+    var label = files.length === 1
+      ? 'Uploading ' + files[0].name + '…'
+      : 'Uploading ' + files.length + ' images…';
+    this.progressToast.textContent = label;
     this.progressToast.classList.add('visible');
 
-    var fd = new FormData();
-    fd.append('file', file);
+    /* Run all uploads in parallel */
+    var promises = Array.from(files).map(function(file) {
+      return self._uploadOneImage(file);
+    });
 
-    fetch(this._uploadEndpoint, { method: 'POST', body: fd })
-      .then(function(r) {
-        if (!r.ok) throw new Error('Upload failed: ' + r.statusText);
-        return r.json();
-      })
-      .then(function(data) {
-        var url = data.filename || data.url || data.src || '';
-        /* Derive alt from the server filename — strip path and extension,
-           then strip any characters that could break markdown or inject HTML */
-        var alt = url
-          .replace(/^.*[\\/]/, '')   /* strip leading path  e.g. /img/  */
-          .replace(/\.[^.]*$/, '')   /* strip extension     e.g. .jpg   */
-          .replace(/[^\w\s\-]/g, '') /* strip anything not word/space/hyphen */
-          .trim() || 'image';
-        self._insertAtCursor('![' + alt + '](' + url + ')');
+    Promise.all(promises)
+      .then(function(markdownStrings) {
+        /* Insert each image as its own new block */
+        markdownStrings.forEach(function(md) {
+          self._insertBlockAtCursor(md);
+        });
       })
       .catch(function(err) {
-        console.error('[Editor] Image upload error:', err);
-        self._insertAtCursor('![' + file.name + '](UPLOAD_FAILED)');
+        console.error('[Editor] Batch upload error:', err);
       })
       .finally(function() {
         self.progressToast.classList.remove('visible');
       });
   };
 
-  /* ── Insert text at current cursor position (active block) ── */
+  /* ── Upload a single image, returns a Promise<markdownString> ── */
+  Editor.prototype._uploadOneImage = function(file) {
+    var self = this;
+
+    if (!this._uploadEndpoint) {
+      return Promise.resolve('![' + file.name + '](IMAGE_URL)');
+    }
+
+    var fd = new FormData();
+    fd.append('file', file);
+
+    return fetch(this._uploadEndpoint, { method: 'POST', body: fd })
+      .then(function(r) {
+        if (!r.ok) throw new Error('Upload failed: ' + r.statusText);
+        return r.json();
+      })
+      .then(function(data) {
+        var url = data.filename || data.url || data.src || '';
+        var alt = url
+          .replace(/^.*[\\/]/, '')
+          .replace(/\.[^.]*$/, '')
+          .replace(/[^\w\s\-]/g, '')
+          .trim() || 'image';
+        return '![' + alt + '](' + url + ')';
+      })
+      .catch(function(err) {
+        console.error('[Editor] Image upload error:', err);
+        return '![' + file.name + '](UPLOAD_FAILED)';
+      });
+  };
+
+  /* ── Insert text as a new block after the current active block ── */
+  Editor.prototype._insertBlockAtCursor = function(text) {
+    var activeBlock = this.editor.querySelector('.smd-block-active') ||
+                      this.editor.querySelector('.smd-block:last-child');
+    if (!activeBlock) {
+      /* Fallback: append to editor */
+      this.editor.appendChild(createBlock(text, this));
+    } else {
+      this._addBlockAfter(activeBlock, text);
+      /* Advance active to the newly inserted block so the next
+         image lands below it, not repeatedly after the same anchor */
+      var inserted = activeBlock.nextElementSibling;
+      if (inserted) {
+        this.editor.querySelectorAll('.smd-block').forEach(function(b) {
+          b.classList.remove('smd-block-active');
+        });
+        inserted.classList.add('smd-block-active');
+      }
+    }
+    this._syncToTextarea();
+    this._updateWordCount();
+  };
+
+  /* ── Legacy single-cursor insert (used by toolbar image action) ── */
   Editor.prototype._insertAtCursor = function(text) {
     var active = this.editor.querySelector('.smd-block-active .smd-block-content') ||
                  this.editor.querySelector('.smd-block-content');
@@ -1316,6 +1449,138 @@
     this._togglePreview();
   };
 
+  /* ================================================================
+     Auto-save
+     Spec:
+       autoSave: {
+         enabled:        true,
+         delay:          2000,       // debounce ms
+         callback:       fn(content, editorInstance),
+         clearAfterSave: false
+       }
+     - Debounced on every content change.
+     - Skips save if content unchanged since last save.
+     - Supports async callbacks (Promise).
+     - Blocks overlapping saves while one is in progress.
+     ================================================================ */
+  Editor.prototype._initAutoSave = function() {
+    var cfg = this.options.autoSave;
+
+    /* Completely disabled when omitted or enabled !== true */
+    if (!cfg || cfg.enabled !== true) return;
+
+    this._autoSaveDebounceTimer = null;
+    this._autoSaveInProgress   = false;
+    this._autoSaveLastContent  = this._savedValue; /* baseline = initial value */
+  };
+
+  /* Called by _syncToTextarea on every content change */
+  Editor.prototype._scheduleAutoSave = function() {
+    var cfg = this.options.autoSave;
+    if (!cfg || cfg.enabled !== true) return;
+    if (typeof cfg.callback !== 'function') return;
+
+    var delay = typeof cfg.delay === 'number' ? cfg.delay : 2000;
+    var self  = this;
+
+    /* Reset debounce timer on every change */
+    if (this._autoSaveDebounceTimer) clearTimeout(this._autoSaveDebounceTimer);
+
+    this._autoSaveDebounceTimer = setTimeout(function() {
+      self._autoSaveDebounceTimer = null;
+      self._executeAutoSave();
+    }, delay);
+  };
+
+  Editor.prototype._executeAutoSave = function() {
+    var cfg = this.options.autoSave;
+    if (!cfg || cfg.enabled !== true) return;
+    if (typeof cfg.callback !== 'function') return;
+
+    /* Block overlapping saves */
+    if (this._autoSaveInProgress) return;
+
+    var content = this.value();
+
+    /* Skip if nothing changed since last save */
+    if (content === this._autoSaveLastContent) return;
+
+    var self = this;
+    this._autoSaveInProgress = true;
+    this._showAutoSaveToast('saving');
+
+    var finish = function(success) {
+      self._autoSaveInProgress = false;
+      if (success) {
+        self._autoSaveLastContent = content;
+        self.markSaved();
+        self._showAutoSaveToast('saved');
+        if (cfg.clearAfterSave) {
+          self._clearEditor(true /* skipConfirm */);
+          /* Also wipe the synced textarea explicitly */
+          if (self.options.element) self.options.element.value = '';
+          self._autoSaveLastContent = '';
+        }
+      } else {
+        self._showAutoSaveToast('error');
+      }
+    };
+
+    try {
+      var result = cfg.callback(content, this);
+      /* Support both sync and Promise-returning callbacks */
+      if (result && typeof result.then === 'function') {
+        result
+          .then(function()  { finish(true);  })
+          .catch(function() { finish(false); });
+      } else {
+        finish(true);
+      }
+    } catch(e) {
+      console.error('[Editor] autoSave callback threw:', e);
+      finish(false);
+    }
+  };
+
+  /* Show auto-save status toast (saving / saved / error) */
+  Editor.prototype._showAutoSaveToast = function(state) {
+    var toast = this.autoSaveToast;
+    if (!toast) return;
+
+    if (this._autoSaveToastTimer) clearTimeout(this._autoSaveToastTimer);
+
+    var messages = { saving: '⟳ Saving…', saved: '✓ Saved', error: '✕ Save failed' };
+    toast.textContent = messages[state] || '';
+    toast.className   = 'smd-autosave-toast smd-autosave-' + state + ' visible';
+
+    if (this.autoSaveStatus) {
+      this.autoSaveStatus.textContent = state === 'saved'
+        ? 'Auto-saved ' + new Date().toLocaleTimeString()
+        : state === 'error' ? 'Auto-save failed' : '';
+    }
+
+    /* Auto-hide after 3 s (keep 'saving' visible until result) */
+    if (state !== 'saving') {
+      var self = this;
+      this._autoSaveToastTimer = setTimeout(function() {
+        toast.classList.remove('visible');
+      }, 3000);
+    }
+  };
+
+  /** Manually trigger auto-save on demand (ignores debounce + unchanged guard) */
+  Editor.prototype.autoSave = function() {
+    /* Force run by temporarily clearing the last-saved content guard */
+    var prev = this._autoSaveLastContent;
+    this._autoSaveLastContent = null;
+    this._executeAutoSave();
+    /* Restore if no save ran (e.g. already in progress) */
+    if (this._autoSaveInProgress && this._autoSaveLastContent === null) {
+      this._autoSaveLastContent = prev;
+    }
+    return this;
+  };
+
   /** Mark the editor as saved — shifts baseline to current content */
   Editor.prototype.markSaved = function() {
     this._savedValue = getPlainText(this.editor);
@@ -1332,6 +1597,8 @@
   /** Destroy editor, restore original textarea */
   Editor.prototype.destroy = function() {
     window.removeEventListener('beforeunload', this._beforeUnloadHandler);
+    if (this._autoSaveDebounceTimer) clearTimeout(this._autoSaveDebounceTimer);
+    if (this._autoSaveToastTimer)    clearTimeout(this._autoSaveToastTimer);
     if (this.options.element) {
       this.options.element.hidden = false;
     }

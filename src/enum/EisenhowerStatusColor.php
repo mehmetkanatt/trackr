@@ -8,6 +8,7 @@ enum EisenhowerStatusColor: string
     case DELEGATE = 'bg-info-dark';
     case SCHEDULE = 'bg-warning-dark';
     case DO = 'bg-danger-darker';
+    case BACKLOG = 'bg-secondary';
 
     public function capitalizedStatusColorName(): string
     {

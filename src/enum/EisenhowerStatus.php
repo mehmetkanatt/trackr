@@ -8,6 +8,7 @@ enum EisenhowerStatus: int
     case DELEGATE = 1;
     case SCHEDULE = 2;
     case DO = 3;
+    case BACKLOG = 4;
 
     public function capitalizedStatusName(): string
     {

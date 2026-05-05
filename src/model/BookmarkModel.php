@@ -500,7 +500,7 @@ class BookmarkModel
     public function updateParentBookmark($bookmarkID, $details)
     {
         $sql = 'UPDATE bookmarks
-                SET site_name = :site_name, title = :title, html_content = :html_content, description = :description, site_type = :site_type, thumbnail = :thumbnail, keyword = :keywords
+                SET site_name = :site_name, title = :title, html_content = :html_content, description = :description, site_type = :site_type, thumbnail = :thumbnail
                 WHERE id = :bookmark_id';
 
         $stm = $this->dbConnection->prepare($sql);

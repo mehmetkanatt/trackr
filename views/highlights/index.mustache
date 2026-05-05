@@ -107,6 +107,12 @@
                                     </div>
                                 </div>
 
+                                <div class="form-row">
+                                    <div class="form-group col-4">
+                                        <button id="btnAddHighlight" type="button" class="btn btn-primary">Add</button>
+                                    </div>
+                                </div>
+
                             </div>
                         </div>
                     </div>
@@ -173,7 +179,7 @@
 
         $(document).on('keydown', function (e) {
             if (e.metaKey && e.keyCode === 13) {
-                saveHighlight();
+                addHighlight();
             }
         });
 
@@ -278,7 +284,7 @@
 
         $('.enterButtonKeyPress').bind('keypress', function (e) {
             if (e.keyCode == 13) {
-                saveHighlight();
+                addHighlight();
             }
         });
 
@@ -303,10 +309,13 @@
                 }
             }
 
-
         });
 
-        var saveHighlight = function () {
+        $("#btnAddHighlight").on('click', function (e) {
+            addHighlight();
+        });
+
+        var addHighlight = function () {
             $.bootstrapPurr('running duplicate highlight control', {
                 type: 'warning',
                 delay: 1000

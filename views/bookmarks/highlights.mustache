@@ -21,18 +21,27 @@
                     <div class="card mb-4">
                         <div class="card">
                             <div class="card-body">
-                                <h5 class="card-title">Add New Highlight</h5>
-                                <textarea id="highlight" hidden></textarea>
+                                <div class="form-group">
+                                    <h5 class="card-title">Add New Highlight</h5>
+                                    <textarea id="highlight" hidden></textarea>
+                                </div>
 
-                                <br>
+                                <div class="form-group">
+                                    <div class="input-group input-group-lg">
+                                        <select id="tags" name="tags[]" class="form-control select2-multi"
+                                                multiple="multiple">
+                                            <option disabled selected></option>
+                                            {{#globalTagsWithSelection}}
+                                                <option value="{{id}}" {{selected}}>{{tag}}</option>
+                                            {{/globalTagsWithSelection}}
+                                        </select>
+                                    </div>
+                                </div>
 
-                                <div class="input-group input-group-lg">
-                                    <select id="tags" name="tags[]" class="form-control select2-multi" multiple="multiple">
-                                        <option disabled selected></option>
-                                        {{#globalTagsWithSelection}}
-                                            <option value="{{id}}" {{selected}}>{{tag}}</option>
-                                        {{/globalTagsWithSelection}}
-                                    </select>
+                                <div class="form-group">
+                                    <div class="input-group">
+                                        <button id="btnAddHighlight" type="button" class="btn btn-primary">Add</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -60,31 +69,8 @@
             uploadEndpoint: "/images"
         });
 
-        $(document).on('keydown', function (e) {
-            if (e.metaKey && e.keyCode === 13) {
-                var highlight = editor.value();
-                var tags = $('#tags').val();
-                var data = "highlight=" + encodeURIComponent(highlight) + "&tags=" + encodeURIComponent(tags);
-                var result = ajaxCall('POST', "/bookmarks/{{bookmarkUID}}/highlights", data)
-
-                if (result !== false) {
-                    location.reload();
-                }
-            }
-        });
-
-        $('.enterButtonKeyPress').bind('keypress', function (e) {
-            if (e.keyCode == 13) {
-                var highlight = editor.value();
-                var tags = $('#tags').val();
-                var data = "highlight=" + encodeURIComponent(highlight) + "&tags=" + encodeURIComponent(tags);
-                var result = ajaxCall('POST', "/bookmarks/{{bookmarkUID}}/highlights", data)
-
-                if (result !== false) {
-                    editor.markSaved()
-                    location.reload();
-                }
-            }
+        $("#btnAddHighlight").on('click', function (e) {
+            addHighlight();
         });
 
         $('#tags').select2({
@@ -95,6 +81,18 @@
             tags: true,              // allow adding new tags
             tokenSeparators: [','],  // split new tags by comma
         });
+
+        function addHighlight() {
+            var highlight = editor.value();
+            var tags = $('#tags').val();
+            var data = "highlight=" + encodeURIComponent(highlight) + "&tags=" + encodeURIComponent(tags);
+            var result = ajaxCall('POST', "/bookmarks/{{bookmarkUID}}/highlights", data)
+
+            if (result !== false) {
+                editor.markSaved();
+                location.reload();
+            }
+        }
 
     });
 </script>

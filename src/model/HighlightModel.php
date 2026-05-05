@@ -33,7 +33,7 @@ class HighlightModel
         $limit = $limit ?? 500;
         $list = [];
 
-        $sql = 'SELECT h.id, h.highlight, h.author, h.source, h.created, h.updated, h.is_encrypted, h.is_secret, h.blog_path, h.book_id, f.id AS favorite_id
+        $sql = 'SELECT h.id, h.highlight, h.title, h.author, h.source, h.created, h.updated, h.is_encrypted, h.is_secret, h.blog_path, h.book_id, f.id AS favorite_id, h.is_deleted, h.user_id
                 FROM highlights h
                 LEFT JOIN favorites f ON h.id = f.source_id AND f.type = 1
                 WHERE h.is_deleted = 0 AND h.user_id = :user_id AND h.type=0
@@ -59,7 +59,7 @@ class HighlightModel
         $limit = $limit ?? 500;
         $list = [];
 
-        $sql = 'SELECT h.id, h.highlight, h.author, h.source, h.created, h.updated, h.is_encrypted, h.is_secret, h.blog_path, h.book_id, f.id AS favorite_id
+        $sql = 'SELECT h.id, h.highlight, h.title, h.author, h.source, h.created, h.updated, h.is_encrypted, h.is_secret, h.blog_path, h.book_id, f.id AS favorite_id
                 FROM highlights h
                 INNER JOIN favorites f ON h.id = f.source_id AND f.type = 1
                 WHERE h.is_deleted = 0 AND h.user_id = :user_id AND h.type=0
@@ -85,7 +85,7 @@ class HighlightModel
         $limit = $limit ?: 500;
         $list = [];
 
-        $sql = "SELECT h.id, h.highlight, h.author, h.source, h.created, h.updated, h.is_encrypted, h.is_secret, h.blog_path, h.book_id, f.id AS favorite_id
+        $sql = "SELECT h.id, h.highlight, h.title, h.author, h.source, h.created, h.updated, h.is_encrypted, h.is_secret, h.blog_path, h.book_id, f.id AS favorite_id
                 FROM highlights h
                 LEFT JOIN favorites f ON h.id = f.source_id AND f.type = 1
                 WHERE h.is_deleted = 0 AND h.user_id = :user_id AND h.$field = :param AND h.is_deleted = 0
@@ -112,7 +112,7 @@ class HighlightModel
         $limit = $limit ? $limit : 500;
         $list = [];
 
-        $sql = 'SELECT h.id, h.highlight, h.author, h.source, h.created, h.updated, h.is_encrypted, h.is_secret, h.blog_path, h.book_id, f.id AS favorite_id
+        $sql = 'SELECT h.id, h.highlight, h.title, h.author, h.source, h.created, h.updated, h.is_encrypted, h.is_secret, h.blog_path, h.book_id, f.id AS favorite_id
                 FROM highlights h LEFT JOIN tag_relationships tr ON h.id = tr.source_id
                 LEFT JOIN tags t ON tr.tag_id = t.id
                 LEFT JOIN favorites f ON h.id = f.source_id AND f.type = 1
@@ -719,7 +719,7 @@ class HighlightModel
         $searchParam = "%$searchParam%";
         $list = [];
 
-        $sql = 'SELECT h.id, h.highlight, h.author, h.source, h.created, h.updated, h.is_encrypted, h.is_secret, h.blog_path, h.book_id, f.id AS favorite_id
+        $sql = 'SELECT h.id, h.highlight, h.title, h.author, h.source, h.created, h.updated, h.is_encrypted, h.is_secret, h.blog_path, h.book_id, f.id AS favorite_id
                 FROM highlights h
                 LEFT JOIN favorites f ON h.id = f.source_id AND f.type = 1
                 WHERE h.is_deleted = 0 AND h.is_encrypted = 0 AND h.highlight LIKE :searchParam AND h.user_id = :user_id';
@@ -744,7 +744,7 @@ class HighlightModel
         $list = [];
         $searchParam = '"' . $searchParam . '"';
 
-        $sql = "SELECT h.id, h.highlight, h.author, h.source, h.created, h.updated, h.is_encrypted, h.is_secret, h.blog_path, h.book_id, f.id AS favorite_id
+        $sql = "SELECT h.id, h.highlight, h.title, h.author, h.source, h.created, h.updated, h.is_encrypted, h.is_secret, h.blog_path, h.book_id, f.id AS favorite_id
                 FROM highlights h
                 LEFT JOIN favorites f ON h.id = f.source_id AND f.type = 1
                 WHERE h.is_deleted = 0
@@ -963,7 +963,7 @@ class HighlightModel
     {
         $versions = [];
 
-        $sql = 'SELECT h.id, h.highlight, hv.old_highlight, hv.created_at, h.author, h.source, h.created, h.updated
+        $sql = 'SELECT h.id, h.highlight, h.title, hv.old_highlight, hv.created_at, h.author, h.source, h.created, h.updated
                 FROM highlights h
                 INNER JOIN highlight_versions hv
                 ON h.id = hv.highlight_id

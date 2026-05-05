@@ -186,7 +186,7 @@
 
         function addTask(columnSelector, taskText, taskUid, eisenhowerStatusColor, eisenhowerStatusName) {
             const newTask = $(`
-    <div class="kanban-item card mb-2 p-2 text-white ${eisenhowerStatusColor}" draggable="true" data-uid="${taskUid}">
+    <div class="kanban-item card mb-2 p-2 text-white ${eisenhowerStatusColor}" draggable="true" data-uid="${taskUid}" data-toggle="modal" data-target="#task-body-modal">
         <div class="kanban-task-title fw-bold">${taskText}</div>
         <div class="small taskRelativeUpdatedAt">
             Updated at: now

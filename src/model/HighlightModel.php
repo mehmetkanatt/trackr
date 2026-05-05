@@ -54,6 +54,30 @@ class HighlightModel
         return $list;
     }
 
+    public function getRawHighlights()
+    {
+        $list = [];
+
+        $sql = 'SELECT h.id, h.highlight, h.title, h.author, h.source, h.created, h.updated, h.is_encrypted, h.is_secret, h.blog_path, h.book_id, f.id AS favorite_id, h.is_deleted, h.user_id
+                FROM highlights h
+                LEFT JOIN favorites f ON h.id = f.source_id AND f.type = 1
+                WHERE h.is_deleted = 0 AND h.user_id = :user_id
+                ORDER BY h.updated DESC';
+
+        $stm = $this->dbConnection->prepare($sql);
+        $stm->bindParam(':user_id', $_SESSION['userInfos']['user_id'], \PDO::PARAM_INT);
+
+        if (!$stm->execute()) {
+            throw CustomException::dbError(StatusCode::HTTP_SERVICE_UNAVAILABLE, json_encode($stm->errorInfo()));
+        }
+
+        while ($row = $stm->fetch(\PDO::FETCH_ASSOC)) {
+            $list[] = $row;
+        }
+
+        return $list;
+    }
+
     public function getFavorites($limit = null)
     {
         $limit = $limit ?? 500;

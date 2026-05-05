@@ -68,6 +68,7 @@ class BoardController extends Controller
         $data = [
             'columns' => $tasks,
             'boardName' => $board['title'],
+            'boardDescription' => $board['description'],
             'boardUID' => $board['uid'],
             'pageTitle' => $board['title'] . ' Tasks | trackr',
             'activeBoards' => 'active',

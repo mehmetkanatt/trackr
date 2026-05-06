@@ -797,24 +797,35 @@ class HighlightModel
         $typesenseClient = new Typesense('highlights');
 
         $searchParameters = [
-            'q' => $searchParam,  // Query string; using '*' for a match-all search
-            'query_by' => 'highlight',
+            'q' => $searchParam,
+            'query_by' => 'highlight,author,source',
             'filter_by' => "user_id:={$_SESSION['userInfos']['user_id']} && is_deleted:=0",
+            'per_page' => 250,
+            'sort_by' => 'created:desc',
+            //'prioritize_exact_match' => true
         ];
+
         $results = $typesenseClient->searchDocuments($searchParameters);
 
+        if (isset($results['error']) || !isset($results['hits'])) {
+            return $highlights;
+        }
+
         foreach ($results['hits'] as $result) {
-            //$highlight = str_replace($searchParam, $result['highlight']['highlight']['snippet'], $result['document']['highlight']);
+            $doc = $result['document'];
             $row = [
-                'id' => $result['document']['id'],
-                'highlight' => $result['document']['highlight'],
-                'author' => $result['document']['author'],
-                'source' => $result['document']['source'],
-                'created' => $result['document']['created'],
-                'updated' => $result['document']['updated'],
-                'is_encrypted' => $result['document']['is_encrypted'],
-                'is_secret' => $result['document']['is_secret'],
-                'blog_path' => $result['document']['blog_path'],
+                'id' => $doc['id'],
+                'title' => null,
+                'highlight' => $doc['highlight'],
+                'author' => $doc['author'],
+                'source' => $doc['source'],
+                'created' => $doc['created'],
+                'updated' => $doc['updated'],
+                'is_encrypted' => $doc['is_encrypted'],
+                'is_secret' => $doc['is_secret'],
+                'blog_path' => $doc['blog_path'],
+                'book_id' => null,
+                'favorite_id' => null,
             ];
             $highlights[] = $this->processHighlightRecord($row);
         }

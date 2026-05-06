@@ -224,7 +224,7 @@
       case 'code':       return ''; /* code blocks keep content always visible */
       case 'code-inner': return '';
       case 'image':      return '';
-      default:           return text ? inline(text) : '';
+      default:           return text ? '<p>' + inline(text) + '</p>' : '';
     }
   }
 

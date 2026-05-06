@@ -11,6 +11,12 @@ Personal library management, reading/working/todo trackings
 1. ``docker compose up``
 1. ``composer install``
 
+### Init Typesense
+
+```shell
+php src/scripts/typesense-init-highlights.php
+```
+
 ## Themes and Used Libraries
 
 - Theme: https://usebootstrap.com/theme/tinydash

@@ -106,6 +106,8 @@ $app->group('', function () {
 
     $this->post('/images', ImageController::class . ':upload');
     $this->get('/images', ImageController::class . ':index');
+    $this->get('/images/list', ImageController::class . ':list');
+    $this->delete('/images/{filename}', ImageController::class . ':delete');
 
     $this->get('/logout', AuthController::class . ':logout');
 

@@ -39,6 +39,20 @@ class ImageModel
         return $images;
     }
 
+    public function delete($filename)
+    {
+        $sql = 'DELETE FROM images WHERE filename = :filename AND user_id = :user_id';
+        $stm = $this->dbConnection->prepare($sql);
+        $stm->bindParam(':filename', $filename, \PDO::PARAM_STR);
+        $stm->bindParam(':user_id', $_SESSION['userInfos']['user_id'], \PDO::PARAM_INT);
+
+        if (!$stm->execute()) {
+            throw CustomException::dbError(StatusCode::HTTP_SERVICE_UNAVAILABLE, json_encode($stm->errorInfo()));
+        }
+
+        return $stm->rowCount() > 0;
+    }
+
     public function insert($fileName)
     {
         $createdAt = time();

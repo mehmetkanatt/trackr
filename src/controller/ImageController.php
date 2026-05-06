@@ -53,4 +53,30 @@ class ImageController extends Controller
 
         return $this->response(StatusCode::HTTP_OK, $data);
     }
+
+    public function list(ServerRequestInterface $request, ResponseInterface $response)
+    {
+        $images = $this->imageModel->getImages();
+        $data = array_map(function ($img) {
+            return ['filename' => $img['filename'], 'url' => '/img/' . $img['filename']];
+        }, $images);
+
+        return $response->withJson(array_values($data));
+    }
+
+    public function delete(ServerRequestInterface $request, ResponseInterface $response, array $args)
+    {
+        $filename = $args['filename'];
+
+        $deleted = $this->imageModel->delete($filename);
+
+        if ($deleted) {
+            $filePath = $_SERVER['DOCUMENT_ROOT'] . '/img/' . $filename;
+            if (file_exists($filePath)) {
+                unlink($filePath);
+            }
+        }
+
+        return $this->response(StatusCode::HTTP_OK, ['deleted' => $deleted]);
+    }
 }

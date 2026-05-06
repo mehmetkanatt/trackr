@@ -234,13 +234,15 @@
         var mainEditor = new Editor({
             element: document.getElementById("highlight"),
             autofocus: true,
-            uploadEndpoint: "/images"
+            uploadEndpoint: "/images",
+            imageLibraryEndpoint: "/images/list"
         });
 
         var commentEditor = new Editor({
             element: document.getElementById("comment"),
             autofocus: false,
-            uploadEndpoint: "/images"
+            uploadEndpoint: "/images",
+            imageLibraryEndpoint: "/images/list"
         });
 
         $('#author').select2({

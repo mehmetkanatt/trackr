@@ -698,6 +698,80 @@
   font-style: italic;
 }
 
+/* ── Per-block preview overlay ──────────────────────────────── */
+/* Shown when a block is not focused; hidden by default */
+.smd-block-preview {
+  display: none;
+  flex: 1;
+  min-width: 0;
+  padding: 3px 28px 3px 0;
+  min-height: 1.65em;
+  cursor: text;
+  font-family: var(--smd-font-prose);
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--smd-text);
+  word-break: break-word;
+}
+
+/* When block is not focused (.smd-block--unfocused added via JS focus/blur):
+   collapse raw content and show the rendered preview.
+   Excludes image (own thumbnail system) and code/code-inner (fence visual depends on content). */
+.smd-block--unfocused:not([data-type="image"]):not([data-type="code"]):not([data-type="code-inner"]) .smd-block-content {
+  flex: 0 0 0px;
+  width: 0;
+  height: 0;
+  padding: 0;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  min-height: 0;
+}
+.smd-block--unfocused:not([data-type="image"]):not([data-type="code"]):not([data-type="code-inner"]) .smd-block-preview {
+  display: block;
+}
+
+/* Preview element typography */
+.smd-block-preview h1 { font-size: 1.9em; font-weight: 700; letter-spacing: -.025em; line-height: 1.25; margin: 0; }
+.smd-block-preview h2 { font-size: 1.5em;  font-weight: 700; letter-spacing: -.02em;  line-height: 1.3;  margin: 0; }
+.smd-block-preview h3 { font-size: 1.2em;  font-weight: 600; letter-spacing: -.01em;  line-height: 1.35; margin: 0; }
+.smd-block-preview h4 { font-size: 1.05em; font-weight: 600; line-height: 1.4; margin: 0; }
+.smd-block-preview p  { margin: 0; }
+.smd-block-preview ul,
+.smd-block-preview ol  { padding-left: 1.5em; margin: 0; }
+.smd-block-preview li  { margin: 0; }
+.smd-block-preview blockquote {
+  margin: 0;
+  padding: .25em .8em .25em 1em;
+  border-left: 3px solid var(--smd-border-focus);
+  background: var(--smd-bg-code);
+  border-radius: 0 var(--smd-radius-xs) var(--smd-radius-xs) 0;
+  color: var(--smd-text-muted);
+  font-style: italic;
+}
+.smd-block-preview code {
+  font-family: var(--smd-font-mono);
+  font-size: .85em;
+  background: var(--smd-bg-code);
+  padding: .1em .35em;
+  border-radius: var(--smd-radius-xs);
+  border: 1px solid var(--smd-border);
+  color: #c0392b;
+}
+.smd-block-preview hr {
+  border: none;
+  border-top: 2px solid var(--smd-border);
+  margin: 6px 0;
+}
+.smd-block-preview a {
+  color: var(--smd-accent);
+  text-decoration: underline;
+}
+.smd-block-preview strong { font-weight: 700; }
+.smd-block-preview em { font-style: italic; }
+.smd-block-preview del { text-decoration: line-through; }
+.smd-wrapper.smd-dark .smd-block-preview code { color: #f38ba8; }
+
 /* ── Block type visual styles ───────────────────────────────── */
 .smd-block[data-type="h1"] .smd-block-content {
   font-size: 1.9em;
@@ -1017,4 +1091,193 @@
     border-left: none;
     flex: 1;
   }
+}
+
+/* ── Inline image thumbnails ────────────────────────────────── */
+
+/* The injected <img> is hidden by default */
+.smd-block-img-wrap {
+  display: none;
+}
+
+/* Image block — not being edited: collapse content to zero, show thumbnail */
+.smd-block[data-type="image"] .smd-block-content {
+  flex: 0 0 0px;
+  width: 0;
+  height: 0;
+  padding: 0;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.smd-block[data-type="image"] .smd-block-img-wrap {
+  display: inline-block;
+  position: relative;
+  flex: 0 0 auto;
+  align-self: flex-start;
+  max-width: calc(100% - 80px);
+  max-height: 120px;
+  margin: 4px 0;
+}
+
+.smd-block[data-type="image"] .smd-block-img {
+  display: block;
+  max-width: 100%;
+  max-height: 120px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: var(--smd-radius-sm);
+  cursor: pointer;
+}
+
+.smd-block-img-remove {
+  display: none;
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  line-height: 1;
+  font-size: 13px;
+  background: var(--smd-text);
+  color: var(--smd-bg);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity var(--smd-transition);
+}
+
+.smd-block-img-remove:hover {
+  opacity: 1;
+}
+
+.smd-block[data-type="image"] .smd-block-img-wrap:hover .smd-block-img-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Image block — being edited: restore content, hide thumbnail */
+.smd-block[data-type="image"]:focus-within .smd-block-content {
+  flex: 1;
+  width: auto;
+  height: auto;
+  padding: 3px 28px 3px 0;
+  overflow: visible;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.smd-block[data-type="image"]:focus-within .smd-block-img-wrap {
+  display: none;
+}
+
+/* ── Image URL Autocomplete ─────────────────────────────────── */
+.smd-img-ac {
+  position: absolute;
+  z-index: 300;
+  background: var(--smd-bg);
+  border: 1.5px solid var(--smd-border);
+  border-radius: var(--smd-radius);
+  box-shadow: var(--smd-shadow-md);
+  width: 280px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.smd-img-ac-msg {
+  padding: 12px 16px;
+  font-size: 12px;
+  color: var(--smd-text-muted);
+  font-family: var(--smd-font-ui);
+  text-align: center;
+}
+
+.smd-img-ac-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  padding: 6px;
+}
+
+.smd-img-ac-item {
+  position: relative;
+  border-radius: var(--smd-radius-xs);
+  overflow: visible;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: border-color var(--smd-transition);
+}
+
+.smd-img-ac-item:hover {
+  border-color: var(--smd-accent);
+}
+
+.smd-img-ac-thumb {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: calc(var(--smd-radius-xs) - 1px);
+  display: block;
+  background: var(--smd-bg-code);
+}
+
+
+/* ── Toolbar image library panel ───────────────────────────── */
+.smd-lib-panel {
+  position: absolute;
+  z-index: 300;
+  background: var(--smd-bg);
+  border: 1.5px solid var(--smd-border);
+  border-radius: var(--smd-radius);
+  box-shadow: var(--smd-shadow-md);
+  width: 320px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* ── Inline block warning tip ──────────────────────────────── */
+.smd-block-warning {
+  position: absolute;
+  left: 52px; /* align with block content (after gutter) */
+  top: calc(100% + 2px);
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  color: #856404;
+  font-size: 12px;
+  font-family: var(--smd-font-ui);
+  padding: 4px 10px;
+  border-radius: var(--smd-radius-sm);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 200;
+}
+.smd-block-warning--visible {
+  opacity: 1;
+}
+.smd-wrapper.smd-dark .smd-block-warning {
+  background: #3a2e00;
+  border-color: #ffc107;
+  color: #ffd84d;
+}
+
+/* ── Fullscreen ─────────────────────────────────────────────── */
+.smd-wrapper.smd-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+}
+
+.smd-wrapper.smd-fullscreen .smd-editor,
+.smd-wrapper.smd-fullscreen .smd-preview {
+  min-height: 0;
 }

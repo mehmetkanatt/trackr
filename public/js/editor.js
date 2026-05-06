@@ -26,7 +26,10 @@
     'dark-mode': '<svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>',
     'light-mode': '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>',
     'code-block': '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="10" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>',
-    'clear-editor': '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>'
+    'clear-editor': '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>',
+    fullscreen: '<svg viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>',
+    'exit-fullscreen': '<svg viewBox="0 0 24 24"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/></svg>',
+    'image-library': '<svg viewBox="0 0 24 24"><rect x="2" y="2" width="9" height="9" rx="1"/><rect x="13" y="2" width="9" height="9" rx="1"/><rect x="2" y="13" width="9" height="9" rx="1"/><rect x="13" y="13" width="9" height="9" rx="1"/></svg>'
   };
 
   /* ── Default toolbar button definitions ─────────────────── */
@@ -46,13 +49,15 @@
     { name: 'clean-block',    title: 'Clean Block',    action: 'clean-block' },
     { name: 'clear-editor',   title: 'Clear All (⌘⌫)', action: 'clear-editor' },
     { name: '|' },
-    { name: 'link',           title: 'Link',           action: 'link' },
-    { name: 'image',          title: 'Image',          action: 'image' },
-    { name: 'table',          title: 'Table',          action: 'table' },
+    { name: 'link',           title: 'Link',                 action: 'link' },
+    { name: 'image',          title: 'External Image Link',  action: 'image' },
+    { name: 'image-library',  title: 'Insert from Library',  action: 'image-library' },
+    { name: 'table',          title: 'Table',                action: 'table' },
     { name: 'horizontal-rule',title: 'Horizontal Rule',action: 'horizontal-rule' },
     { name: '|' },
     { name: 'preview',        title: 'Toggle Preview', action: 'preview'    },
-    { name: 'dark-mode',      title: 'Toggle Dark Mode', action: 'dark-mode' }
+    { name: 'dark-mode',      title: 'Toggle Dark Mode', action: 'dark-mode' },
+    { name: 'fullscreen',     title: 'Toggle Fullscreen (F11)', action: 'fullscreen' }
   ];
 
   /* ── Default insertTexts ────────────────────────────────── */
@@ -187,7 +192,40 @@
     if (/^\d+\. /.test(text))  return 'ol';
     if (/^```/.test(text))     return 'code';
     if (/^---+$/.test(text.trim())) return 'hr';
+    if (/^!\[[^\]]*\]\([^)]+\)$/.test(text.trim())) return 'image';
     return 'p';
+  }
+
+  /* Render a single block's markdown to HTML for the preview overlay */
+  function renderBlockPreview(text, type) {
+    function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function inline(s) {
+      s = esc(s);
+      s = s.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+      s = s.replace(/\*\*(.+?)\*\*/g,     '<strong>$1</strong>');
+      s = s.replace(/__(.+?)__/g,          '<strong>$1</strong>');
+      s = s.replace(/\*(.+?)\*/g,          '<em>$1</em>');
+      s = s.replace(/_(.+?)_/g,            '<em>$1</em>');
+      s = s.replace(/~~(.+?)~~/g,          '<del>$1</del>');
+      s = s.replace(/`([^`]+)`/g,          '<code>$1</code>');
+      s = s.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" style="max-height:1.2em;vertical-align:middle">');
+      s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g,  '<a href="$2" target="_blank" rel="noopener">$1</a>');
+      return s;
+    }
+    switch (type) {
+      case 'h1':         return '<h1>'          + inline(text.replace(/^#+\s*/,'')) + '</h1>';
+      case 'h2':         return '<h2>'          + inline(text.replace(/^#+\s*/,'')) + '</h2>';
+      case 'h3':         return '<h3>'          + inline(text.replace(/^#+\s*/,'')) + '</h3>';
+      case 'h4':         return '<h4>'          + inline(text.replace(/^#+\s*/,'')) + '</h4>';
+      case 'quote':      return '<blockquote>'  + inline(text.replace(/^>\s*/,''))  + '</blockquote>';
+      case 'ul':         return '<ul><li>'      + inline(text.replace(/^[-*+]\s*/,'')) + '</li></ul>';
+      case 'ol':         return '<li>'          + inline(text.replace(/^\d+\.\s*/,'')) + '</li>';
+      case 'hr':         return '<hr>';
+      case 'code':       return ''; /* code blocks keep content always visible */
+      case 'code-inner': return '';
+      case 'image':      return '';
+      default:           return text ? inline(text) : '';
+    }
   }
 
   /* Apply type-based data attribute to a block element */
@@ -200,6 +238,43 @@
       type = isInsideCodeFence(blockEl) ? 'code-inner' : type;
     }
     blockEl.dataset.type = type;
+
+    /* Update the read-only preview overlay (shown when block is not focused) */
+    var preview = blockEl.querySelector('.smd-block-preview');
+    if (preview && type !== 'image') {
+      preview.innerHTML = renderBlockPreview(content.textContent, type);
+    }
+
+    /* Inject / update / remove the inline thumbnail for image blocks */
+    var existingWrap = blockEl.querySelector('.smd-block-img-wrap');
+    if (type === 'image') {
+      var m = content.textContent.trim().match(/^!\[[^\]]*\]\(([^)]+)\)$/);
+      var src = m ? m[1] : '';
+      if (existingWrap) {
+        existingWrap.querySelector('.smd-block-img').setAttribute('src', src);
+      } else {
+        var wrap = document.createElement('div');
+        wrap.className = 'smd-block-img-wrap';
+
+        var thumb = document.createElement('img');
+        thumb.className = 'smd-block-img';
+        thumb.setAttribute('src', src);
+        thumb.alt = '';
+        thumb.addEventListener('click', function() { content.focus(); });
+
+        var removeBtn = document.createElement('button');
+        removeBtn.className = 'smd-block-img-remove';
+        removeBtn.type      = 'button';
+        removeBtn.title     = 'Remove image';
+        removeBtn.innerHTML = '&times;';
+
+        wrap.appendChild(thumb);
+        wrap.appendChild(removeBtn);
+        blockEl.appendChild(wrap);
+      }
+    } else if (existingWrap) {
+      existingWrap.parentNode.removeChild(existingWrap);
+    }
   }
 
   /* Returns true if the given block row sits between opening and closing ``` fences */
@@ -258,8 +333,27 @@
     content.spellcheck      = true;
     if (text) content.textContent = text;
 
+    /* Read-only preview overlay — shown when block is not focused */
+    var preview = document.createElement('div');
+    preview.className = 'smd-block-preview';
+    preview.addEventListener('mousedown', function(e) {
+      e.preventDefault();
+      content.focus();
+      self._placeCursorAtEnd(content);
+    });
+
+    /* Toggle unfocused class so CSS can swap content ↔ preview */
+    row.classList.add('smd-block--unfocused');
+    content.addEventListener('focus', function() {
+      row.classList.remove('smd-block--unfocused');
+    });
+    content.addEventListener('blur', function() {
+      row.classList.add('smd-block--unfocused');
+    });
+
     row.appendChild(gutter);
     row.appendChild(content);
+    row.appendChild(preview);
     applyBlockType(row);
 
     /* ── Per-block keyboard handling ── */
@@ -317,6 +411,12 @@
       if (e.key === 'Tab') {
         e.preventDefault();
         document.execCommand('insertText', false, '  ');
+        return;
+      }
+      /* F11 → toggle fullscreen */
+      if (e.key === 'F11') {
+        e.preventDefault();
+        self._toggleFullscreen();
         return;
       }
       /* Ctrl/Cmd shortcuts */
@@ -392,6 +492,13 @@
             self._syncToTextarea();
             return;
           }
+        }
+
+        /* Guard: warn if image URL is empty or still the default placeholder */
+        var imgUrlMatch = currentText.match(/^!\[[^\]]*\]\(([^)]*)\)$/);
+        if (imgUrlMatch && (!imgUrlMatch[1] || imgUrlMatch[1] === '/img/')) {
+          self._showBlockWarning(row, 'Enter an image URL before continuing');
+          return;
         }
 
         /* Normal split */
@@ -563,6 +670,7 @@
   function Editor(options) {
     this.options  = this._mergeOptions(options || {});
     this._previewMode = false;
+    this._fullscreenMode = false;
     this._isDirty = false;
     this._allSelected = false;
     this._uploadEndpoint = this.options.uploadEndpoint || null;
@@ -618,6 +726,8 @@
       initialValue:        opts.initialValue   || (opts.element ? opts.element.value : '') || '',
       /* Auto-save — { enabled, delay, callback, clearAfterSave } */
       autoSave:            opts.autoSave       || null,
+      /* Image library endpoint — enables inline autocomplete inside ![]() */
+      imageLibraryEndpoint: opts.imageLibraryEndpoint || null,
     };
   };
 
@@ -755,6 +865,13 @@
           e.preventDefault();
           self._toggleTablePicker(btn);
         });
+      } else if (name === 'image-library') {
+        /* Library button shows image picker panel */
+        if (!self.options.imageLibraryEndpoint) return; /* skip if no endpoint */
+        btn.addEventListener('mousedown', function(e) {
+          e.preventDefault();
+          self._toggleLibraryPanel(btn);
+        });
       } else {
         btn.addEventListener('mousedown', function(e) {
           e.preventDefault();
@@ -764,8 +881,10 @@
       bar.appendChild(btn);
 
       /* Store button references */
-      if (name === 'preview')   self.previewBtn   = btn;
-      if (name === 'dark-mode') self.darkModeBtn  = btn;
+      if (name === 'preview')       self.previewBtn       = btn;
+      if (name === 'dark-mode')     self.darkModeBtn      = btn;
+      if (name === 'fullscreen')    self.fullscreenBtn    = btn;
+      if (name === 'image-library') self.imageLibraryBtn  = btn;
     });
 
     /* Spacer pushes unsaved indicator to the far right */
@@ -858,6 +977,33 @@
       }
       self._uploadImages(imageFiles);
     }, true);
+
+    /* ── Image URL autocomplete — delegated from block content ── */
+    ed.addEventListener('input', function(e) {
+      if (e.target && e.target.classList.contains('smd-block-content')) {
+        self._checkImageAutocomplete(e.target);
+      }
+    });
+
+    /* Escape closes the autocomplete (capture so it runs before the block handler) */
+    ed.addEventListener('keydown', function(e) {
+      if (self._imagePickerEl && e.key === 'Escape') {
+        e.stopPropagation();
+        self._closeImageLibrary();
+      }
+    }, true);
+
+    /* Remove image block when the × button is clicked */
+    ed.addEventListener('click', function(e) {
+      var btn = e.target.closest('.smd-block-img-remove');
+      if (!btn) return;
+      var row = btn.closest('.smd-block');
+      if (row && row.parentNode) {
+        row.parentNode.removeChild(row);
+        self._syncToTextarea();
+        self._updateWordCount();
+      }
+    });
   };
 
   /* ================================================================
@@ -1146,8 +1292,9 @@
      Formatting actions
      ================================================================ */
   Editor.prototype._handleAction = function(action) {
-    if (action === 'preview')      { this._togglePreview();   return; }
-    if (action === 'dark-mode')    { this._toggleDarkMode();  return; }
+    if (action === 'preview')      { this._togglePreview();    return; }
+    if (action === 'dark-mode')    { this._toggleDarkMode();   return; }
+    if (action === 'fullscreen')   { this._toggleFullscreen(); return; }
     if (action === 'clean-block')  { this._cleanBlock();      return; }
     if (action === 'code-block')   { this._insertCodeBlock(); return; }
     if (action === 'clear-editor') { this._clearEditor();     return; }
@@ -1454,6 +1601,345 @@
     }
   };
 
+  /* ================================================================
+     Image URL autocomplete
+     Fires on every input event inside a block.  Detects the cursor
+     being inside the URL portion of a Markdown image ![]( … ) and
+     shows a floating panel of existing images from imageLibraryEndpoint.
+     ================================================================ */
+  Editor.prototype._checkImageAutocomplete = function(el) {
+    if (!this.options.imageLibraryEndpoint) return;
+    if (this._suppressNextAutocomplete) {
+      this._suppressNextAutocomplete = false;
+      this._closeImageLibrary();
+      return;
+    }
+
+    var sel = window.getSelection();
+    if (!sel || !sel.rangeCount) { this._closeImageLibrary(); return; }
+
+    /* Text from the start of this block content element to the cursor */
+    var range = sel.getRangeAt(0).cloneRange();
+    range.selectNodeContents(el);
+    range.setEnd(sel.focusNode, sel.focusOffset);
+    var textBefore = range.toString();
+
+    /* Match cursor inside the URL part of ![](...) — no closing ) typed yet */
+    var match = textBefore.match(/!\[[^\]]*\]\(([^)]*)$/);
+    if (!match) { this._closeImageLibrary(); return; }
+
+    var query     = match[1];
+    var caretRange = sel.getRangeAt(0).cloneRange();
+    caretRange.collapse(true);
+    this._openImageAutocomplete(query, caretRange, query.length);
+  };
+
+  Editor.prototype._openImageAutocomplete = function(query, caretRange, queryLen) {
+    var self = this;
+
+    if (!this._imagePickerEl) {
+      var picker = document.createElement('div');
+      picker.className = 'smd-img-ac';
+      this.wrapper.appendChild(picker);
+      this._imagePickerEl = picker;
+
+      this._imgAcOutside = function(e) {
+        if (!picker.contains(e.target)) self._closeImageLibrary();
+      };
+      setTimeout(function() {
+        document.addEventListener('mousedown', self._imgAcOutside);
+      }, 0);
+    }
+
+    this._imageQueryLen = queryLen;
+
+    /* Position the panel below the text caret */
+    var caretRect = caretRange.getBoundingClientRect();
+    var wrapRect  = this.wrapper.getBoundingClientRect();
+    this._imagePickerEl.style.top  = (caretRect.bottom - wrapRect.top + 6) + 'px';
+    this._imagePickerEl.style.left = Math.max(0, caretRect.left - wrapRect.left) + 'px';
+
+    if (this._imageCache) {
+      this._renderAutocompleteList(query);
+    } else if (!this._imageFetching) {
+      this._imageFetching = true;
+      this._imagePickerEl.innerHTML = '<div class="smd-img-ac-msg">Loading…</div>';
+      var self2 = this;
+      fetch(this.options.imageLibraryEndpoint)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          self2._imageCache    = Array.isArray(data) ? data : [];
+          self2._imageFetching = false;
+          if (self2._imagePickerEl) self2._renderAutocompleteList(query);
+        })
+        .catch(function() {
+          self2._imageFetching = false;
+          if (self2._imagePickerEl) {
+            self2._imagePickerEl.innerHTML = '<div class="smd-img-ac-msg">Failed to load images.</div>';
+          }
+        });
+    }
+  };
+
+  Editor.prototype._renderAutocompleteList = function(query) {
+    var self    = this;
+    var images  = this._imageCache || [];
+    /* Strip any leading path so "/img/foo" filters the same as "foo" */
+    var q       = query.split('/').pop().toLowerCase();
+    var filtered = (q && images.length)
+      ? images.filter(function(img) { return img.filename.toLowerCase().indexOf(q) !== -1; })
+      : images;
+
+    /* If the typed text matches nothing, fall back to showing all images */
+    if (filtered.length === 0 && images.length) filtered = images;
+
+    var picker = this._imagePickerEl;
+    picker.innerHTML = '';
+
+    if (images.length === 0) {
+      picker.innerHTML = '<div class="smd-img-ac-msg">No images yet.</div>';
+      return;
+    }
+
+    var grid = document.createElement('div');
+    grid.className = 'smd-img-ac-grid';
+
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          var el = entry.target;
+          var src = el.dataset.src;
+          if (src) { el.src = src; delete el.dataset.src; }
+          observer.unobserve(el);
+        }
+      });
+    }, { root: picker, rootMargin: '40px' });
+
+    filtered.slice(0, 60).forEach(function(img) {
+      var item = document.createElement('div');
+      item.className = 'smd-img-ac-item';
+
+      var thumb = document.createElement('img');
+      thumb.className = 'smd-img-ac-thumb';
+      thumb.dataset.src = img.url;
+      thumb.src = '';
+      thumb.alt = '';
+      observer.observe(thumb);
+
+      item.appendChild(thumb);
+
+      item.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        var qLen = self._imageQueryLen;
+        self._closeImageLibrary();
+        self._selectAutocompleteImage(img.url, qLen);
+      });
+
+      grid.appendChild(item);
+    });
+
+    picker.appendChild(grid);
+  };
+
+  Editor.prototype._selectAutocompleteImage = function(url, queryLen) {
+    var sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return;
+    var range = sel.getRangeAt(0).cloneRange();
+    try {
+      range.setStart(range.startContainer, range.startOffset - queryLen);
+    } catch(e) { return; }
+    sel.removeAllRanges();
+    sel.addRange(range);
+    this._suppressNextAutocomplete = true;
+    document.execCommand('insertText', false, url);
+    this._syncToTextarea();
+    this._updateWordCount();
+  };
+
+  Editor.prototype._closeImageLibrary = function() {
+    if (this._imagePickerEl) {
+      this._imagePickerEl.parentNode && this._imagePickerEl.parentNode.removeChild(this._imagePickerEl);
+      this._imagePickerEl = null;
+    }
+    if (this._imgAcOutside) {
+      document.removeEventListener('mousedown', this._imgAcOutside);
+      this._imgAcOutside = null;
+    }
+  };
+
+  /* ================================================================
+     Toolbar Image Library Panel
+     Opens a grid of uploaded images anchored to the toolbar button.
+     Clicking an image inserts ![](url) at the current cursor position.
+     ================================================================ */
+  Editor.prototype._toggleLibraryPanel = function(btn) {
+    if (this._libPanelEl) {
+      this._closeLibraryPanel();
+      return;
+    }
+
+    var self   = this;
+    var panel  = document.createElement('div');
+    panel.className = 'smd-lib-panel';
+    this.wrapper.appendChild(panel);
+    this._libPanelEl = panel;
+
+    /* Position panel below the toolbar button */
+    var btnRect  = btn.getBoundingClientRect();
+    var wrapRect = this.wrapper.getBoundingClientRect();
+    panel.style.top  = (btnRect.bottom - wrapRect.top + 4) + 'px';
+    panel.style.left = Math.max(0, btnRect.left - wrapRect.left) + 'px';
+
+    if (this.imageLibraryBtn) this.imageLibraryBtn.classList.add('smd-active');
+
+    this._libPanelOutside = function(e) {
+      if (!panel.contains(e.target) && e.target !== btn) {
+        self._closeLibraryPanel();
+      }
+    };
+    setTimeout(function() {
+      document.addEventListener('mousedown', self._libPanelOutside);
+    }, 0);
+
+    this._renderLibraryGrid(panel);
+  };
+
+  Editor.prototype._renderLibraryGrid = function(panel) {
+    var self = this;
+
+    if (this._imageCache) {
+      this._fillLibraryGrid(panel, this._imageCache);
+      return;
+    }
+
+    panel.innerHTML = '<div class="smd-img-ac-msg">Loading…</div>';
+
+    if (this._imageFetching) return;
+    this._imageFetching = true;
+
+    fetch(this.options.imageLibraryEndpoint)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        self._imageCache    = Array.isArray(data) ? data : [];
+        self._imageFetching = false;
+        if (self._libPanelEl) self._fillLibraryGrid(self._libPanelEl, self._imageCache);
+      })
+      .catch(function() {
+        self._imageFetching = false;
+        if (self._libPanelEl) {
+          self._libPanelEl.innerHTML = '<div class="smd-img-ac-msg">Failed to load images.</div>';
+        }
+      });
+  };
+
+  Editor.prototype._fillLibraryGrid = function(panel, images) {
+    var self = this;
+    panel.innerHTML = '';
+
+    if (!images.length) {
+      panel.innerHTML = '<div class="smd-img-ac-msg">No images yet.</div>';
+      return;
+    }
+
+    var grid = document.createElement('div');
+    grid.className = 'smd-img-ac-grid';
+
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          var el = entry.target;
+          if (el.dataset.src) { el.src = el.dataset.src; delete el.dataset.src; }
+          observer.unobserve(el);
+        }
+      });
+    }, { root: panel, rootMargin: '40px' });
+
+    images.slice(0, 60).forEach(function(img) {
+      var item = document.createElement('div');
+      item.className = 'smd-img-ac-item';
+
+      var thumb = document.createElement('img');
+      thumb.className = 'smd-img-ac-thumb';
+      thumb.dataset.src = img.url;
+      thumb.src = '';
+      thumb.alt = '';
+      observer.observe(thumb);
+
+      item.appendChild(thumb);
+      item.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        self._closeLibraryPanel();
+        self._insertImageAtCursor(img.url);
+      });
+
+      grid.appendChild(item);
+    });
+
+    panel.appendChild(grid);
+  };
+
+  Editor.prototype._insertImageAtCursor = function(url) {
+    var markdown = '![](' + url + ')';
+    var refRow = this.editor.querySelector('.smd-block-active') ||
+                 this.editor.querySelector('.smd-block:last-child');
+    if (!refRow) return;
+    /* Insert image block, then immediately add an empty block after it and focus
+       that — so the image block loses :focus-within and renders as a thumbnail. */
+    this._addBlockAfter(refRow, markdown);
+    var imageRow = refRow.nextElementSibling;
+    if (imageRow) {
+      this._addBlockAfter(imageRow, '');
+    }
+  };
+
+  Editor.prototype._closeLibraryPanel = function() {
+    if (this._libPanelEl) {
+      this._libPanelEl.parentNode && this._libPanelEl.parentNode.removeChild(this._libPanelEl);
+      this._libPanelEl = null;
+    }
+    if (this._libPanelOutside) {
+      document.removeEventListener('mousedown', this._libPanelOutside);
+      this._libPanelOutside = null;
+    }
+    if (this.imageLibraryBtn) this.imageLibraryBtn.classList.remove('smd-active');
+  };
+
+  /* ================================================================
+     Fullscreen toggle
+     Adds smd-fullscreen to the wrapper (fixed, inset-0, z-9999).
+     Escape or F11 exits.
+     ================================================================ */
+  Editor.prototype._toggleFullscreen = function() {
+    this._fullscreenMode = !this._fullscreenMode;
+    var self = this;
+    if (this._fullscreenMode) {
+      this.wrapper.classList.add('smd-fullscreen');
+      if (this.fullscreenBtn) {
+        this.fullscreenBtn.innerHTML = ICONS['exit-fullscreen'];
+        this.fullscreenBtn.title     = 'Exit Fullscreen (Esc / F11)';
+        this.fullscreenBtn.classList.add('smd-active');
+      }
+      this._fullscreenEscHandler = function(e) {
+        if (e.key === 'Escape' || e.key === 'F11') {
+          e.preventDefault();
+          self._toggleFullscreen();
+        }
+      };
+      document.addEventListener('keydown', this._fullscreenEscHandler);
+    } else {
+      this.wrapper.classList.remove('smd-fullscreen');
+      if (this.fullscreenBtn) {
+        this.fullscreenBtn.innerHTML = ICONS['fullscreen'];
+        this.fullscreenBtn.title     = 'Toggle Fullscreen (F11)';
+        this.fullscreenBtn.classList.remove('smd-active');
+      }
+      if (this._fullscreenEscHandler) {
+        document.removeEventListener('keydown', this._fullscreenEscHandler);
+        this._fullscreenEscHandler = null;
+      }
+    }
+  };
+
   /* ── Detect initial theme ────────────────────────────────── */
   Editor.prototype._initTheme = function() {
     var saved = null;
@@ -1689,6 +2175,29 @@
     }
   };
 
+  /* Show a transient inline warning tip anchored below a block element */
+  Editor.prototype._showBlockWarning = function(blockEl, message) {
+    /* Remove any existing warning first */
+    var existing = blockEl.querySelector('.smd-block-warning');
+    if (existing) existing.parentNode.removeChild(existing);
+
+    var tip = document.createElement('div');
+    tip.className = 'smd-block-warning';
+    tip.textContent = message;
+    blockEl.appendChild(tip);
+
+    /* Trigger fade-in on next frame */
+    requestAnimationFrame(function() { tip.classList.add('smd-block-warning--visible'); });
+
+    /* Auto-remove after 2.5 s */
+    setTimeout(function() {
+      tip.classList.remove('smd-block-warning--visible');
+      setTimeout(function() {
+        if (tip.parentNode) tip.parentNode.removeChild(tip);
+      }, 300);
+    }, 2500);
+  };
+
   /* Show auto-save status toast (saving / saved / error) */
   Editor.prototype._showAutoSaveToast = function(state) {
     var toast = this.autoSaveToast;
@@ -1746,6 +2255,12 @@
     window.removeEventListener('beforeunload', this._beforeUnloadHandler);
     if (this._autoSaveDebounceTimer) clearTimeout(this._autoSaveDebounceTimer);
     if (this._autoSaveToastTimer)    clearTimeout(this._autoSaveToastTimer);
+    if (this._fullscreenEscHandler) {
+      document.removeEventListener('keydown', this._fullscreenEscHandler);
+      this._fullscreenEscHandler = null;
+    }
+    this._closeImageLibrary();
+    this._closeLibraryPanel();
     this._closeTablePicker();
     if (this.options.element) {
       this.options.element.hidden = false;

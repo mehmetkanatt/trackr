@@ -84,7 +84,8 @@
         var editor = new Editor({
             element: document.getElementById("logTextArea"),
             autofocus: true,
-            uploadEndpoint: "/images"
+            uploadEndpoint: "/images",
+            imageLibraryEndpoint: "/images/list"
         });
 
         hljs.highlightAll();

@@ -168,7 +168,8 @@
         var editor = new Editor({
             element: document.getElementById("highlight"),
             autofocus: true,
-            uploadEndpoint: "/images"
+            uploadEndpoint: "/images",
+            imageLibraryEndpoint: "/images/list"
         });
 
         $(document).on('click', '.toggleCard', function() {

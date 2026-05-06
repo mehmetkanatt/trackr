@@ -1,0 +1,99 @@
+<div id="hlLightbox" class="hl-lightbox">
+    <span class="hl-lightbox-close" id="hlLightboxClose">&times;</span>
+    <span class="hl-lightbox-counter" id="hlLightboxCounter"></span>
+    <span class="hl-lightbox-arrow prev" id="hlLightboxPrev">&#8249;</span>
+    <img id="hlLightboxImg" class="hl-lightbox-img" src="" alt="">
+    <span class="hl-lightbox-arrow next" id="hlLightboxNext">&#8250;</span>
+</div>
+
+<style>
+.hl-lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.88);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+    cursor: zoom-out;
+}
+.hl-lightbox.active { display: flex; }
+.hl-lightbox-img {
+    max-width: 90vw;
+    max-height: 85vh;
+    border-radius: 4px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+    cursor: default;
+}
+.hl-lightbox-close {
+    position: absolute;
+    top: 20px;
+    right: 28px;
+    font-size: 2rem;
+    color: #fff;
+    cursor: pointer;
+    line-height: 1;
+}
+.hl-lightbox-counter {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255,255,255,0.7);
+    font-size: 0.85rem;
+}
+.hl-lightbox-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 2.5rem;
+    color: rgba(255,255,255,0.8);
+    cursor: pointer;
+    user-select: none;
+    padding: 8px 16px;
+    transition: color 0.15s;
+    z-index: 1;
+}
+.hl-lightbox-arrow:hover { color: #fff; }
+.hl-lightbox-arrow.prev { left: 16px; }
+.hl-lightbox-arrow.next { right: 16px; }
+</style>
+
+<script>
+(function () {
+    var currentIdx = 0;
+
+    function getImgs() {
+        return $('.highlightCard .card-body img');
+    }
+
+    function open(idx) {
+        var $imgs = getImgs();
+        if (!$imgs.length) return;
+        currentIdx = (idx + $imgs.length) % $imgs.length;
+        var src = $imgs.eq(currentIdx).attr('src');
+        $('#hlLightboxImg').attr('src', src);
+        $('#hlLightboxCounter').text((currentIdx + 1) + ' / ' + $imgs.length);
+        $('#hlLightbox').addClass('active');
+    }
+
+    $(document).on('click', '.highlightCard .card-body img', function () {
+        open(getImgs().index(this));
+    });
+
+    $('#hlLightboxPrev').on('click', function (e) { e.stopPropagation(); open(currentIdx - 1); });
+    $('#hlLightboxNext').on('click', function (e) { e.stopPropagation(); open(currentIdx + 1); });
+    $('#hlLightboxClose').on('click', function () { $('#hlLightbox').removeClass('active'); });
+
+    $('#hlLightbox').on('click', function (e) {
+        if (e.target === this) $('#hlLightbox').removeClass('active');
+    });
+
+    $(document).on('keydown', function (e) {
+        if (!$('#hlLightbox').hasClass('active')) return;
+        if (e.key === 'Escape')        $('#hlLightbox').removeClass('active');
+        else if (e.key === 'ArrowLeft')  open(currentIdx - 1);
+        else if (e.key === 'ArrowRight') open(currentIdx + 1);
+    });
+}());
+</script>

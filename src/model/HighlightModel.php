@@ -36,7 +36,7 @@ class HighlightModel
         $sql = 'SELECT h.id, h.highlight, h.title, h.author, h.source, h.created, h.updated, h.is_encrypted, h.is_secret, h.blog_path, h.book_id, f.id AS favorite_id, h.is_deleted, h.user_id
                 FROM highlights h
                 LEFT JOIN favorites f ON h.id = f.source_id AND f.type = 1
-                WHERE h.is_deleted = 0 AND h.user_id = :user_id AND h.type=0
+                WHERE h.is_deleted = 0 AND h.user_id = :user_id
                 ORDER BY h.updated DESC LIMIT :limit';
 
         $stm = $this->dbConnection->prepare($sql);
@@ -106,7 +106,7 @@ class HighlightModel
 
     public function getHighlightsByGivenField($field, $param, $limit = null)
     {
-        $limit = $limit ?: 500;
+        $limit = $limit ?? 500;
         $list = [];
 
         $sql = "SELECT h.id, h.highlight, h.title, h.author, h.source, h.created, h.updated, h.is_encrypted, h.is_secret, h.blog_path, h.book_id, f.id AS favorite_id
@@ -133,7 +133,7 @@ class HighlightModel
 
     public function getHighlightsByTag($tag, $limit = null)
     {
-        $limit = $limit ? $limit : 500;
+        $limit = $limit ?? 500;
         $list = [];
 
         $sql = 'SELECT h.id, h.highlight, h.title, h.author, h.source, h.created, h.updated, h.is_encrypted, h.is_secret, h.blog_path, h.book_id, f.id AS favorite_id
@@ -197,7 +197,7 @@ class HighlightModel
         $highlight['expandableClass'] = '';
 
         $lineCount = substr_count($highlight['highlight'], "\n") + 1;
-        if ($lineCount > 2) {
+        if ($lineCount > 10) {
             $highlight['expandable'] = true;
             $highlight['expandableClass'] = 'clamp';
         }

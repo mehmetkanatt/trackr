@@ -25,6 +25,7 @@ class ImageController extends Controller
         $data = [
             'pageTitle' => 'Images | trackr',
             'images' => $images,
+            'imageCount' => count($images),
             'activeImages' => 'active'
         ];
 
